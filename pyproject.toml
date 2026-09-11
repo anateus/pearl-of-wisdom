@@ -1,0 +1,34 @@
+[project]
+name = "pearl-of-wisdom"
+version = "0.1.1"
+description = "Durable probabilistic investigations for coding agents."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+pearl-of-wisdom = "pearl_of_wisdom.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.5",
+]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "UP"]

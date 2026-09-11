@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+*.egg-info/
+/pearl.sqlite3
+
+# Source handoff. Keep locally, never publish or commit.
+/initial_base.md

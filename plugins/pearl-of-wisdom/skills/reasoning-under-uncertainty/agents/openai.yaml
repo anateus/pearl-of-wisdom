@@ -1,0 +1,6 @@
+interface:
+  display_name: "Reasoning under uncertainty"
+  short_description: "Choose a proportionate uncertainty method"
+  default_prompt: "Use $reasoning-under-uncertainty to choose a proportionate method for this uncertain question."
+policy:
+  allow_implicit_invocation: true

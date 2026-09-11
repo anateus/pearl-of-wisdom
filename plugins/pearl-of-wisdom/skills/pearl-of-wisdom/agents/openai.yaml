@@ -1,0 +1,6 @@
+interface:
+  display_name: "Pearl of Wisdom"
+  short_description: "Persist and resume uncertainty investigations"
+  default_prompt: "Use $pearl-of-wisdom to create or resume a durable investigation for this question."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,28 @@
+{
+  "name": "pearl-of-wisdom",
+  "version": "0.1.1",
+  "description": "Portable skills for proportionate uncertainty reasoning and durable investigations.",
+  "author": {
+    "name": "Pearl of Wisdom contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "uncertainty",
+    "probability",
+    "investigations",
+    "coding-agents"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Pearl of Wisdom",
+    "shortDescription": "Reason proportionately and preserve investigations.",
+    "longDescription": "Routes uncertain questions to an appropriate reasoning method and provides a durable investigation workflow through the pearl-of-wisdom CLI.",
+    "developerName": "Pearl of Wisdom contributors",
+    "category": "Productivity",
+    "capabilities": [
+      "Analysis",
+      "Hooks"
+    ],
+    "defaultPrompt": "Use $reasoning-under-uncertainty to choose a proportionate method for this uncertain question."
+  }
+}

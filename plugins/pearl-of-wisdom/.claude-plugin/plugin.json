@@ -1,0 +1,16 @@
+{
+  "name": "pearl-of-wisdom",
+  "version": "0.1.1",
+  "description": "Portable skills for proportionate uncertainty reasoning and durable investigations.",
+  "author": {
+    "name": "Pearl of Wisdom contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "uncertainty",
+    "probability",
+    "investigations",
+    "coding-agents"
+  ],
+  "skills": "./skills/"
+}

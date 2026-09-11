@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "description": "Small, host-neutral prompts for checking skill routing boundaries.",
+  "cases": [
+    {
+      "id": "exact-rate",
+      "label": "positive",
+      "prompt": "Calculate the exact failure probability from these finite counts.",
+      "expected_skills": ["reasoning-under-uncertainty"]
+    },
+    {
+      "id": "durable-investigation",
+      "label": "positive",
+      "prompt": "Create a durable investigation, record the evidence, and resume it next turn.",
+      "expected_skills": ["pearl-of-wisdom"]
+    },
+    {
+      "id": "rename-function",
+      "label": "negative",
+      "prompt": "Rename this private function and update its callers.",
+      "expected_skills": []
+    },
+    {
+      "id": "ambiguous-regression",
+      "label": "ambiguous",
+      "prompt": "The latest deploy may have caused the regression. What should we check?",
+      "expected_skills": ["reasoning-under-uncertainty", "pearl-of-wisdom"],
+      "acceptable_skills": [
+        "reasoning-under-uncertainty",
+        "pearl-of-wisdom",
+        "none"
+      ]
+    }
+  ]
+}
