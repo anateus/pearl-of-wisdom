@@ -8,7 +8,13 @@ from collections import defaultdict
 from collections.abc import Mapping
 from dataclasses import dataclass
 
+from .base import require_only_fields
 from .protocol import AnalysisResult
+
+REQUEST_FIELDS = {"evidence", "network", "query"}
+NETWORK_FIELDS = {"variables"}
+VARIABLE_FIELDS = {"cpt", "parents", "states"}
+CPT_ROW_FIELDS = {"probabilities", "when"}
 
 
 class DiscreteBayesValidationError(ValueError):
@@ -54,6 +60,12 @@ class DiscreteBayesEngine:
 
     def analyze(self, request: dict[str, object]) -> AnalysisResult:
         request_map = _require_mapping(request, label="request")
+        require_only_fields(
+            request_map,
+            REQUEST_FIELDS,
+            label="request",
+            error_type=DiscreteBayesValidationError,
+        )
         variables = self._network(request_map.get("network"))
         query = self._query(request_map.get("query"), variables)
         evidence = self._evidence(request_map.get("evidence", {}), variables, label="evidence")
@@ -85,8 +97,49 @@ class DiscreteBayesEngine:
             metadata={"query": list(query), "variables": len(variables)},
         )
 
+    def example_request(self) -> dict[str, object]:
+        """Return a small request that exercises this engine's public input shape."""
+        return {
+            "network": {
+                "variables": {
+                    "fault": {
+                        "states": ["present", "absent"],
+                        "parents": [],
+                        "cpt": [
+                            {
+                                "when": {},
+                                "probabilities": {"present": 0.2, "absent": 0.8},
+                            }
+                        ],
+                    },
+                    "alarm": {
+                        "states": ["positive", "negative"],
+                        "parents": ["fault"],
+                        "cpt": [
+                            {
+                                "when": {"fault": "present"},
+                                "probabilities": {"positive": 0.8, "negative": 0.2},
+                            },
+                            {
+                                "when": {"fault": "absent"},
+                                "probabilities": {"positive": 0.1, "negative": 0.9},
+                            },
+                        ],
+                    },
+                }
+            },
+            "query": ["fault"],
+            "evidence": {"alarm": "positive"},
+        }
+
     def _network(self, value: object) -> dict[str, Variable]:
         network = _require_mapping(value, label="network")
+        require_only_fields(
+            network,
+            NETWORK_FIELDS,
+            label="network",
+            error_type=DiscreteBayesValidationError,
+        )
         variable_specs = _require_mapping(network.get("variables"), label="network.variables")
         if not variable_specs:
             raise DiscreteBayesValidationError("network.variables must not be empty")
@@ -95,6 +148,12 @@ class DiscreteBayesEngine:
             if not isinstance(name, str) or not name:
                 raise DiscreteBayesValidationError("variable names must be non-empty strings")
             spec = _require_mapping(raw_spec, label=f"network.variables.{name}")
+            require_only_fields(
+                spec,
+                VARIABLE_FIELDS,
+                label=f"network.variables.{name}",
+                error_type=DiscreteBayesValidationError,
+            )
             states_raw = spec.get("states")
             if not isinstance(states_raw, list) or not states_raw:
                 raise DiscreteBayesValidationError(
@@ -167,6 +226,12 @@ class DiscreteBayesEngine:
         seen: dict[tuple[str, ...], dict[str, float]] = {}
         for index, row in enumerate(rows):
             row_map = _require_mapping(row, label=f"network.variables.{variable.name}.cpt[{index}]")
+            require_only_fields(
+                row_map,
+                CPT_ROW_FIELDS,
+                label=f"network.variables.{variable.name}.cpt[{index}]",
+                error_type=DiscreteBayesValidationError,
+            )
             when = _require_mapping(
                 row_map.get("when", {}),
                 label=f"network.variables.{variable.name}.cpt[{index}].when",

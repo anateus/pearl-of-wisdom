@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from pearl_of_wisdom.cli import main
 
 
@@ -128,3 +130,53 @@ def test_cli_analyze_runs_registered_engine_without_creating_a_database(
         "metadata": {"samples": 3, "seed": 11},
     }
     assert not (tmp_path / "pearl.sqlite3").exists()
+
+
+def test_cli_analyze_rejects_unknown_bayes_request_field(capsys) -> None:
+    request = {
+        "network": {
+            "variables": {
+                "fault": {
+                    "states": ["present", "absent"],
+                    "parents": [],
+                    "cpt": [
+                        {
+                            "when": {},
+                            "probabilities": {"present": 0.2, "absent": 0.8},
+                        }
+                    ],
+                }
+            }
+        },
+        "query": ["fault"],
+        "observations": {"fault": "present"},
+    }
+
+    result = main(["analyze", "--engine", "discrete-bayes", "--data", json.dumps(request)])
+    captured = capsys.readouterr()
+
+    assert result == 1
+    assert captured.out == ""
+    error = json.loads(captured.err)["error"]
+    assert error["code"] == "validation_error"
+    assert "request" in error["message"]
+    assert "observations" in error["message"]
+
+
+@pytest.mark.parametrize("engine", ["discrete-bayes", "monte-carlo"])
+def test_cli_analyze_examples_are_machine_readable_and_runnable(engine: str, capsys) -> None:
+    assert main(["analyze", "--engine", engine, "--example"]) == 0
+    example = json.loads(capsys.readouterr().out)
+
+    assert set(example) == {"request", "result"}
+    assert main(["analyze", "--engine", engine, "--data", json.dumps(example["request"])]) == 0
+    rerun = json.loads(capsys.readouterr().out)
+    assert rerun == example["result"]
+
+
+def test_cli_help_points_to_runnable_engine_examples(capsys) -> None:
+    assert main(["analyze", "--help"]) == 0
+    help_text = capsys.readouterr().out
+
+    assert "--example" in help_text
+    assert "runnable request" in help_text

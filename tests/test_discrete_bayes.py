@@ -1,4 +1,5 @@
 import math
+from copy import deepcopy
 
 import pytest
 
@@ -131,3 +132,50 @@ def test_state_space_limit_is_checked_before_enumeration() -> None:
 def test_state_space_limit_must_be_a_positive_integer(max_states: object) -> None:
     with pytest.raises(DiscreteBayesValidationError, match="max_states"):
         DiscreteBayesEngine(max_states=max_states)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("location", "unknown_field"),
+    [
+        ("request", "observations"),
+        ("network", "nodes"),
+        ("variable", "state"),
+        ("cpt", "condition"),
+    ],
+)
+def test_unknown_fields_are_rejected_at_typed_boundaries(location: str, unknown_field: str) -> None:
+    request = {"network": rain_network(), "query": ["rain"], "evidence": {"wet": "yes"}}
+    if location == "request":
+        request[unknown_field] = {"wet": "yes"}
+    elif location == "network":
+        request["network"][unknown_field] = {}  # type: ignore[index]
+    elif location == "variable":
+        request["network"]["variables"]["wet"][unknown_field] = []  # type: ignore[index]
+    else:
+        request["network"]["variables"]["wet"]["cpt"][0][unknown_field] = {}  # type: ignore[index]
+
+    with pytest.raises(DiscreteBayesValidationError, match=rf"{location}.*{unknown_field}"):
+        DiscreteBayesEngine().analyze(request)
+
+
+def test_dynamic_node_condition_and_state_maps_remain_valid() -> None:
+    network = deepcopy(rain_network())
+    variables = network["variables"]
+    assert isinstance(variables, dict)
+    variables["rain reading"] = variables.pop("rain")
+    variables["wet reading"] = variables.pop("wet")
+    wet = variables["wet reading"]
+    assert isinstance(wet, dict)
+    wet["parents"] = ["rain reading"]
+    for row in wet["cpt"]:  # type: ignore[union-attr]
+        row["when"] = {"rain reading": row["when"].pop("rain")}
+
+    result = DiscreteBayesEngine().analyze(
+        {
+            "network": network,
+            "query": ["rain reading"],
+            "evidence": {"wet reading": "yes"},
+        }
+    )
+
+    assert result.data["evidence_probability"] == pytest.approx(0.26)

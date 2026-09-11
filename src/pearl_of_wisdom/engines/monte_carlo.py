@@ -7,9 +7,25 @@ import random
 import statistics
 from collections.abc import Callable, Mapping
 
-from .base import AnalysisResult, compile_numeric_expression, evaluate_numeric_expression
+from .base import (
+    AnalysisResult,
+    compile_numeric_expression,
+    evaluate_numeric_expression,
+    require_only_fields,
+)
 
 MAX_SAMPLES = 1_000_000
+REQUEST_FIELDS = {"expression", "quantiles", "samples", "seed", "variables"}
+DISTRIBUTION_FIELDS = {
+    "bernoulli": {"distribution", "probability"},
+    "constant": {"distribution", "value"},
+    "discrete": {"distribution", "probabilities", "values"},
+    "lognormal": {"distribution", "mean", "sigma"},
+    "normal": {"distribution", "mean", "standard_deviation"},
+    "randint": {"distribution", "high", "low"},
+    "triangular": {"distribution", "high", "low", "mode"},
+    "uniform": {"distribution", "high", "low"},
+}
 
 
 class MonteCarloValidationError(ValueError):
@@ -68,6 +84,12 @@ class MonteCarloEngine:
 
     def analyze(self, request: dict[str, object]) -> AnalysisResult:
         request_map = _require_mapping(request, label="request")
+        require_only_fields(
+            request_map,
+            REQUEST_FIELDS,
+            label="request",
+            error_type=MonteCarloValidationError,
+        )
         variables = self._variables(request_map.get("variables"))
         expression_raw = request_map.get("expression")
         quantiles_raw = request_map.get("quantiles", [0.05, 0.5, 0.95])
@@ -107,6 +129,16 @@ class MonteCarloEngine:
             metadata={"samples": samples, "seed": seed_raw},
         )
 
+    def example_request(self) -> dict[str, object]:
+        """Return a small request that exercises this engine's public input shape."""
+        return {
+            "variables": {"duration_ms": {"distribution": "uniform", "low": 40, "high": 80}},
+            "expression": "duration_ms",
+            "samples": 100,
+            "seed": 7,
+            "quantiles": [0.05, 0.5, 0.95],
+        }
+
     def _compile_expression(self, expression: object):
         try:
             return compile_numeric_expression(expression if isinstance(expression, str) else "")
@@ -129,6 +161,17 @@ class MonteCarloEngine:
         kind = distribution.get("distribution")
         if not isinstance(kind, str):
             raise MonteCarloValidationError(f"variables.{name}.distribution must be a string")
+        allowed_fields = DISTRIBUTION_FIELDS.get(kind)
+        if allowed_fields is None:
+            raise MonteCarloValidationError(
+                f"variables.{name}.distribution {kind!r} is unsupported"
+            )
+        require_only_fields(
+            distribution,
+            allowed_fields,
+            label=f"variables.{name}",
+            error_type=MonteCarloValidationError,
+        )
         if kind == "constant":
             constant = _require_number(distribution.get("value"), label=f"variables.{name}.value")
             return lambda rng: constant
@@ -202,7 +245,7 @@ class MonteCarloEngine:
             return lambda rng: float(
                 rng.choices(normalized_values, normalized_probabilities, k=1)[0]
             )
-        raise MonteCarloValidationError(f"variables.{name}.distribution {kind!r} is unsupported")
+        raise AssertionError(f"unhandled supported distribution {kind!r}")
 
     def _quantiles(self, value: object) -> list[float]:
         if not isinstance(value, list) or not value:

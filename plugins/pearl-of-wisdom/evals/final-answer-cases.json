@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "description": "Focused cases for checking final answers against saved investigation inputs and results.",
+  "cases": [
+    {
+      "id": "sequential-latency-bound",
+      "prompt": "Summarize the saved latency analysis and advise whether the sequential feature toggle rules out time drift.",
+      "recorded_inputs": {
+        "baseline_latency_ms": 120,
+        "enabled_latency_ms": 200,
+        "design": "baseline measured before enabled treatment"
+      },
+      "recorded_assumptions": [
+        "additive effects",
+        "nonnegative effects",
+        "no time drift"
+      ],
+      "recorded_result": {
+        "bounds_ms": [0, 80]
+      },
+      "required_final_answer_claims": [
+        "the 0 to 80 ms bound is conditional on all recorded assumptions",
+        "the sequential toggle does not eliminate time drift"
+      ],
+      "forbidden_final_answer_claims": [
+        "the feature effect is unconditionally between 0 and 80 ms",
+        "the sequential toggle eliminates time drift"
+      ]
+    }
+  ]
+}

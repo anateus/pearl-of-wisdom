@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import math
+from collections.abc import Collection, Mapping
 
 from .protocol import AnalysisResult
 
@@ -11,7 +12,29 @@ ALLOWED_BINARY_OPERATORS = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv, a
 ALLOWED_UNARY_OPERATORS = (ast.UAdd, ast.USub)
 MAX_EXPRESSION_CHARS = 4096
 MAX_EXPRESSION_NODES = 256
-__all__ = ["AnalysisResult", "compile_numeric_expression", "evaluate_numeric_expression"]
+__all__ = [
+    "AnalysisResult",
+    "compile_numeric_expression",
+    "evaluate_numeric_expression",
+    "require_only_fields",
+]
+
+
+def require_only_fields(
+    value: Mapping[object, object],
+    allowed: Collection[str],
+    *,
+    label: str,
+    error_type: type[ValueError] = ValueError,
+) -> None:
+    """Reject surplus keys at a typed object boundary."""
+    unknown = sorted((key for key in value if key not in allowed), key=repr)
+    if not unknown:
+        return
+    noun = "field" if len(unknown) == 1 else "fields"
+    fields = ", ".join(repr(key) for key in unknown)
+    allowed_fields = ", ".join(sorted(allowed))
+    raise error_type(f"{label} contains unknown {noun} {fields}; allowed fields: {allowed_fields}")
 
 
 def compile_numeric_expression(expression: str) -> ast.Expression:

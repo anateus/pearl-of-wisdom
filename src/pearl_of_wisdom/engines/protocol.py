@@ -80,6 +80,11 @@ class AnalysisEngine(Protocol):
 
         ...
 
+    def example_request(self) -> dict[str, object]:
+        """Return a fresh, runnable example request."""
+
+        ...
+
     def analyze(self, request: Mapping[str, object]) -> AnalysisResult:
         """Validate and analyze a JSON-compatible request."""
 

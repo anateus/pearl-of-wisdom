@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from . import __version__
-from .engines import DiscreteBayesEngine, MonteCarloEngine
+from .engines import AnalysisEngine, DiscreteBayesEngine, MonteCarloEngine
 from .investigation import InvestigationStatus, JsonValue
 from .store import InvestigationNotFoundError, InvestigationStore
 
@@ -25,6 +25,12 @@ class JsonArgumentParser(argparse.ArgumentParser):
 
     def error(self, message: str) -> None:
         raise CliUsageError(message)
+
+
+ENGINE_FACTORIES = {
+    "discrete-bayes": DiscreteBayesEngine,
+    "monte-carlo": MonteCarloEngine,
+}
 
 
 def _json_payload(value: str) -> JsonValue:
@@ -58,24 +64,40 @@ def _parser() -> JsonArgumentParser:
     analysis.add_argument("investigation_id")
     analysis.add_argument("--engine", required=True)
     analysis.add_argument("--data", required=True, type=_json_payload)
-    run_engine = commands.add_parser("analyze")
+    run_engine = commands.add_parser(
+        "analyze",
+        help="run an engine or print a runnable input example",
+        description="Run an engine with JSON input, or print a runnable example and its result.",
+    )
     run_engine.add_argument(
         "--engine",
         required=True,
-        choices=["discrete-bayes", "monte-carlo"],
+        choices=sorted(ENGINE_FACTORIES),
     )
-    run_engine.add_argument("--data", required=True, type=_json_payload)
+    input_source = run_engine.add_mutually_exclusive_group(required=True)
+    input_source.add_argument("--data", type=_json_payload, help="engine request as a JSON object")
+    input_source.add_argument(
+        "--example",
+        action="store_true",
+        help="print a runnable request and the result produced from it",
+    )
     return parser
+
+
+def _engine(engine_name: str) -> AnalysisEngine:
+    return ENGINE_FACTORIES[engine_name]()
 
 
 def _analyze(engine_name: str, payload: JsonValue) -> dict[str, JsonValue]:
     if not isinstance(payload, dict):
         raise ValueError("analyze --data must be a JSON object")
-    engines = {
-        "discrete-bayes": DiscreteBayesEngine(),
-        "monte-carlo": MonteCarloEngine(),
-    }
-    return engines[engine_name].analyze(payload).to_dict()
+    return _engine(engine_name).analyze(payload).to_dict()
+
+
+def _example(engine_name: str) -> dict[str, JsonValue]:
+    engine = _engine(engine_name)
+    request = engine.example_request()
+    return {"request": request, "result": engine.analyze(request).to_dict()}
 
 
 def _emit(value: Any, *, stream: Any | None = None) -> None:
@@ -96,7 +118,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         arguments = parser.parse_args(argv)
         command = arguments.command
         if command == "analyze":
-            output = _analyze(arguments.engine, arguments.data)
+            output = (
+                _example(arguments.engine)
+                if arguments.example
+                else _analyze(arguments.engine, arguments.data)
+            )
         else:
             store = InvestigationStore(arguments.db)
             if command == "create":

@@ -16,6 +16,7 @@ Use the installed `pearl-of-wisdom` CLI as the durable record for an investigati
 3. Create a new investigation for a new question. Resume by listing or showing existing records and selecting an ID; never create a duplicate merely because a new turn started.
 4. Record context, assumptions, observations/evidence, and analyses as separate entries. Preserve source, time, units, and provenance. Read [evidence.md](references/evidence.md) before recording a probabilistic claim.
 5. Promote only after the record has a clear question, estimand or decision, assumptions, evidence, analysis, limitations, and a conclusion that is conditional on its model. Use the CLI's current promote/status command and verify the resulting record with `show`.
+6. Before a final answer that relies on the investigation, compare every material claim, including incidental advice, with the saved inputs and results. Carry forward each assumption needed for a bound or conclusion. Correct or qualify mismatches; this check improves traceability but does not guarantee correctness.
 
 Hindsight may supply optional continuity context when it is available. It is never probabilistic evidence, a prior, a likelihood, or a replacement for a recorded source. Do not require a Hindsight daemon, log raw prompts, or silently import memory into an investigation.
 

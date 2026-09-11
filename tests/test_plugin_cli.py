@@ -72,6 +72,53 @@ def test_installed_cli_and_check_run_without_uv_or_installation_writes(tmp_path:
     assert checked.returncode == 0, checked.stderr
     info = json.loads(checked.stdout)
     assert info["version"] == VERSION
+    example = subprocess.run(
+        [*prefix, info["executable"], "analyze", "--engine", "discrete-bayes", "--example"],
+        cwd=workspace,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert example.returncode == 0, example.stderr
+    discovered = json.loads(example.stdout)
+    rerun = subprocess.run(
+        [
+            *prefix,
+            info["executable"],
+            "analyze",
+            "--engine",
+            "discrete-bayes",
+            "--data",
+            json.dumps(discovered["request"]),
+        ],
+        cwd=workspace,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert rerun.returncode == 0, rerun.stderr
+    assert json.loads(rerun.stdout) == discovered["result"]
+    misspelled = discovered["request"] | {"observations": {"alarm": "positive"}}
+    rejected = subprocess.run(
+        [
+            *prefix,
+            info["executable"],
+            "analyze",
+            "--engine",
+            "discrete-bayes",
+            "--data",
+            json.dumps(misspelled),
+        ],
+        cwd=workspace,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert rejected.returncode == 1
+    assert json.loads(rejected.stderr)["error"]["code"] == "validation_error"
     database = workspace / "pearl.sqlite3"
     created = subprocess.run(
         [*prefix, info["executable"], "--db", str(database), "create", "--status", "durable"],

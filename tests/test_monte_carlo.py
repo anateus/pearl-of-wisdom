@@ -138,3 +138,24 @@ def test_expression_size_is_bounded() -> None:
                 "seed": 1,
             }
         )
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {
+            "variables": {"x": {"distribution": "constant", "value": 1}},
+            "expression": "x",
+            "samples": 1,
+            "sampls": 100,
+        },
+        {
+            "variables": {"x": {"distribution": "constant", "value": 1, "vale": 100}},
+            "expression": "x",
+            "samples": 1,
+        },
+    ],
+)
+def test_unknown_fields_are_rejected_at_typed_boundaries(payload: dict[str, object]) -> None:
+    with pytest.raises(MonteCarloValidationError, match="unknown field"):
+        MonteCarloEngine().analyze(payload)

@@ -12,6 +12,13 @@ pearl-of-wisdom --db PATH list --help
 pearl-of-wisdom --db PATH show INVESTIGATION_ID --help
 ```
 
+To discover each engine's input shape without reading package source, ask `analyze` for a machine-readable example. The response contains the request and the result produced by running it:
+
+```bash
+pearl-of-wisdom analyze --engine discrete-bayes --example
+pearl-of-wisdom analyze --engine monte-carlo --example
+```
+
 The current public seams include `create`, `list`, `show`, `promote`, `analyze`, and record commands such as `record-context`, `record-assumption`, `record-evidence`, and `record-analysis`. Use their JSON output as the handoff between turns. If a release names resume or promote differently, follow that release's help text and verify with `show`.
 
 Recommended sequence:

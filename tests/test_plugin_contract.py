@@ -35,6 +35,23 @@ def test_routing_fixture_has_positive_negative_and_ambiguous_cases() -> None:
     assert all(case["prompt"] for case in fixture["cases"])
 
 
+def test_final_answer_fixture_preserves_latency_bound_assumptions() -> None:
+    fixture = json.loads((PLUGIN / "evals" / "final-answer-cases.json").read_text())
+    case = fixture["cases"][0]
+
+    assert case["id"] == "sequential-latency-bound"
+    assert case["recorded_result"]["bounds_ms"] == [0, 80]
+    assert set(case["recorded_assumptions"]) == {
+        "additive effects",
+        "nonnegative effects",
+        "no time drift",
+    }
+    assert (
+        "the sequential toggle does not eliminate time drift"
+        in case["required_final_answer_claims"]
+    )
+
+
 def test_markdown_links_stay_inside_the_portable_plugin() -> None:
     for markdown in PLUGIN.rglob("*.md"):
         for target in _relative_markdown_targets(markdown.read_text()):
