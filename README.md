@@ -181,20 +181,6 @@ There is no daemon in this release. Direct CLI calls avoid another lifecycle and
 
 Causal inference, value-of-information calculations, system simulation, dependent Monte Carlo inputs, schema migrations, and automatic engine-result persistence are also deferred. The skills may suggest these methods, but they do not imply that Pearl implements them.
 
-## Claim audit
-
-The initial research notes were a starting point, not a specification. This audit was refreshed on August 31, 2026.
-
-| Claim | Current evidence |
-| --- | --- |
-| CausalPy is limited to DiD and RDD | Incorrect. Its current documentation covers a broader set of quasi-experimental workflows. [CausalPy documentation](https://causalpy.readthedocs.io/en/latest/index.html) |
-| DoWhy covers causal identification and refutation | Supported. Its documented workflow includes model, identify, estimate, and refute. [DoWhy documentation](https://www.pywhy.org/dowhy/v0.8/user_guide/effect_inference/identify.html) |
-| pgmpy handles Bayesian and interventional queries but has no public VoI API | Partly supported. Current APIs cover inference, interventions, and adjustment tooling. A sweep of the current `pgmpy/`, `docs/`, and `examples/` trees found no value-of-information or expected-information-gain API. This is a scoped source audit, not proof of absence elsewhere. [pgmpy causal inference API](https://pgmpy.org/api/generated/causal_inference/pgmpy.inference.CausalInference.CausalInference.html) |
-| Agent-facing causal tools are absent | Incorrect. Causal-Copilot has CLI and web workflows; causal-agent provides method selection and diagnostics; causalif and PyWhy-LLM are experimental LLM-oriented systems. [Causal-Copilot](https://github.com/Lancelot39/Causal-Copilot), [causal-agent](https://pypi.org/project/causal-agent/), [causalif](https://pypi.org/project/causalif/), [PyWhy-LLM](https://github.com/py-why/pywhyllm) |
-| Squiggle provides Bayesian inference | Incorrect. Its documentation explicitly says that Bayesian inference is outside its current scope. [Squiggle documentation](https://www.squiggle-language.com/docs) |
-| One existing library covers the whole proposed workflow | Unverified. The ecosystem overlaps substantially, so the remaining gap is a product hypothesis to test through use. |
-| The project is only a roughly 100-line wrapper | Incorrect for the implemented scope. Persistence, validation, JSON contracts, engines, hooks, skills, and host packaging are separate concerns. |
-
 ## Development
 
 ```bash
