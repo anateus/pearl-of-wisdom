@@ -1,4 +1,8 @@
-# Pearl of Wisdom
+<p align="center">
+  <img src="pearl.png" alt="Pearl of Wisdom logo" width="280">
+</p>
+
+<h1 align="center">Pearl of Wisdom</h1>
 
 Pearl of Wisdom gives coding agents a small, inspectable place to do uncertainty work. It can run a quick calculation without creating state, or keep a multi-turn investigation in SQLite when the work grows.
 
