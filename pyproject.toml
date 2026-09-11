@@ -1,6 +1,6 @@
 [project]
 name = "pearl-of-wisdom"
-version = "0.1.1"
+version = "0.1.2"
 description = "Durable probabilistic investigations for coding agents."
 readme = "README.md"
 license = "MIT"
