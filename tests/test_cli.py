@@ -3,14 +3,14 @@ from pathlib import Path
 
 import pytest
 
-from pearl_of_wisdom.cli import main
+from pearl_of_wisdom.cli import ENGINE_FACTORIES, main
 
 
 def test_cli_version_does_not_open_database(tmp_path: Path, capsys) -> None:
     database = tmp_path / "missing" / "pearl.sqlite3"
     assert main(["--db", str(database), "--version"]) == 0
     captured = capsys.readouterr()
-    assert captured.out == "pearl-of-wisdom 0.1.2\n"
+    assert captured.out == "pearl-of-wisdom 0.1.3\n"
     assert captured.err == ""
     assert not database.exists()
 
@@ -71,6 +71,68 @@ def test_cli_reports_invalid_arguments_as_json(tmp_path: Path, capsys) -> None:
     assert result == 1
     assert captured.out == ""
     assert json.loads(captured.err)["error"]["code"] == "invalid_arguments"
+
+
+def test_cli_record_analysis_rejects_unknown_engine_without_persisting(
+    tmp_path: Path, capsys
+) -> None:
+    database = tmp_path / "pearl.sqlite3"
+    assert main(["--db", str(database), "create"]) == 0
+    investigation_id = json.loads(capsys.readouterr().out)["id"]
+
+    result = main(
+        [
+            "--db",
+            str(database),
+            "record-analysis",
+            investigation_id,
+            "--engine",
+            "bogus",
+            "--data",
+            "{}",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert result == 1
+    assert captured.out == ""
+    error = json.loads(captured.err)["error"]
+    assert error["code"] == "invalid_arguments"
+    assert "bogus" in error["message"]
+
+    assert main(["--db", str(database), "show", investigation_id]) == 0
+    shown = json.loads(capsys.readouterr().out)
+    assert shown["analyses"] == []
+
+
+@pytest.mark.parametrize("engine", sorted(ENGINE_FACTORIES))
+def test_cli_record_analysis_accepts_each_registered_engine(
+    tmp_path: Path, capsys, engine: str
+) -> None:
+    database = tmp_path / f"{engine}.sqlite3"
+    assert main(["--db", str(database), "create"]) == 0
+    investigation_id = json.loads(capsys.readouterr().out)["id"]
+
+    assert (
+        main(
+            [
+                "--db",
+                str(database),
+                "record-analysis",
+                investigation_id,
+                "--engine",
+                engine,
+                "--data",
+                "{}",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    assert main(["--db", str(database), "show", investigation_id]) == 0
+    shown = json.loads(capsys.readouterr().out)
+    assert [record["engine"] for record in shown["analyses"]] == [engine]
 
 
 def test_cli_reports_storage_failures_as_json(tmp_path: Path, capsys) -> None:

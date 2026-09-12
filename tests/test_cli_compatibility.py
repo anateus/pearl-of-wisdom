@@ -42,7 +42,7 @@ def _check(
     )
 
 
-@pytest.mark.parametrize("version", ["0.1.2", "0.1.3", "0.1.99"])
+@pytest.mark.parametrize("version", ["0.1.3", "0.1.4", "0.1.99"])
 def test_compatible_patch_does_not_need_uv(tmp_path: Path, version: str) -> None:
     result = _check(tmp_path, f"pearl-of-wisdom {version}")
     assert result.returncode == 0, result.stderr
@@ -51,24 +51,26 @@ def test_compatible_patch_does_not_need_uv(tmp_path: Path, version: str) -> None
         "compatible": True,
         "executable": str(tmp_path / "bin" / "pearl-of-wisdom"),
         "version": version,
-        "required": ">=0.1.2,<0.2.0",
+        "required": ">=0.1.3,<0.2.0",
     }
     assert result.stderr == ""
     assert sorted(path.name for path in tmp_path.iterdir()) == ["bin"]
 
 
-@pytest.mark.parametrize("version", ["0.1.1", "0.1.0", "0.0.9", "0.2.0", "1.0.0", "0.1.2rc1"])
+@pytest.mark.parametrize(
+    "version", ["0.1.2", "0.1.1", "0.1.0", "0.0.9", "0.2.0", "1.0.0", "0.1.3rc1"]
+)
 def test_rejects_incompatible_versions(tmp_path: Path, version: str) -> None:
     result = _check(tmp_path, f"pearl-of-wisdom {version}")
     assert result.returncode == 1
     assert result.stdout == ""
     error = json.loads(result.stderr)["error"]
     assert error["code"] == "cli_incompatible"
-    assert error["required"] == ">=0.1.2,<0.2.0"
+    assert error["required"] == ">=0.1.3,<0.2.0"
 
 
 @pytest.mark.parametrize(
-    "output,status", [(None, 0), ("unsupported --version", 1), ("other 0.1.2", 0)]
+    "output,status", [(None, 0), ("unsupported --version", 1), ("other 0.1.3", 0)]
 )
 def test_missing_or_unrecognized_cli_stops_with_install_hint(
     tmp_path: Path, output: str | None, status: int
@@ -83,7 +85,7 @@ def test_missing_or_unrecognized_cli_stops_with_install_hint(
         "tool",
         "install",
         "--reinstall",
-        str(PLUGIN / "cli" / "pearl_of_wisdom-0.1.2-py3-none-any.whl"),
+        str(PLUGIN / "cli" / "pearl_of_wisdom-0.1.3-py3-none-any.whl"),
     ]
 
 
@@ -94,12 +96,12 @@ def test_install_hint_uses_the_loaded_plugin_and_quotes_spaces(tmp_path: Path) -
     assert result.returncode == 1
     command = json.loads(result.stderr)["error"]["install_command"]
     assert shlex.split(command)[-1] == str(
-        plugin / "cli" / "pearl_of_wisdom-0.1.2-py3-none-any.whl"
+        plugin / "cli" / "pearl_of_wisdom-0.1.3-py3-none-any.whl"
     )
 
 
 def test_relative_path_entry_returns_an_absolute_executable(tmp_path: Path) -> None:
-    result = _check(tmp_path, "pearl-of-wisdom 0.1.2", relative_path=True)
+    result = _check(tmp_path, "pearl-of-wisdom 0.1.3", relative_path=True)
     assert result.returncode == 0, result.stderr
     executable = json.loads(result.stdout)["executable"]
     assert Path(executable).is_absolute()

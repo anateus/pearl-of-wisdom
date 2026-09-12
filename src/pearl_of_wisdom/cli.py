@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from . import __version__
-from .engines import AnalysisEngine, DiscreteBayesEngine, MonteCarloEngine
+from .engines import ENGINE_FACTORIES, AnalysisEngine
 from .investigation import InvestigationStatus, JsonValue
 from .store import InvestigationNotFoundError, InvestigationStore
 
@@ -25,12 +25,6 @@ class JsonArgumentParser(argparse.ArgumentParser):
 
     def error(self, message: str) -> None:
         raise CliUsageError(message)
-
-
-ENGINE_FACTORIES = {
-    "discrete-bayes": DiscreteBayesEngine,
-    "monte-carlo": MonteCarloEngine,
-}
 
 
 def _json_payload(value: str) -> JsonValue:
@@ -62,7 +56,7 @@ def _parser() -> JsonArgumentParser:
         record.add_argument("--data", required=True, type=_json_payload)
     analysis = commands.add_parser("record-analysis")
     analysis.add_argument("investigation_id")
-    analysis.add_argument("--engine", required=True)
+    analysis.add_argument("--engine", required=True, choices=sorted(ENGINE_FACTORIES))
     analysis.add_argument("--data", required=True, type=_json_payload)
     run_engine = commands.add_parser(
         "analyze",

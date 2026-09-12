@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
+from .engines import ENGINE_FACTORIES
 from .investigation import (
     Investigation,
     InvestigationRecord,
@@ -176,6 +177,9 @@ class InvestigationStore:
     ) -> InvestigationRecord:
         if not engine.strip():
             raise ValueError("Analysis engine must not be empty")
+        if engine not in ENGINE_FACTORIES:
+            allowed = ", ".join(sorted(ENGINE_FACTORIES))
+            raise ValueError(f"Unknown analysis engine {engine!r}; expected one of: {allowed}")
         return self._append(investigation_id, kind="analysis", payload=payload, engine=engine)
 
     def _append(

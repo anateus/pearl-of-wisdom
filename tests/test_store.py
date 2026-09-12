@@ -43,6 +43,15 @@ def test_store_rejects_unknown_investigations(store: InvestigationStore) -> None
         store.record_evidence("inv_missing", {"source": "none"})
 
 
+def test_store_rejects_unknown_analysis_engines(store: InvestigationStore) -> None:
+    investigation = store.create_investigation()
+
+    with pytest.raises(ValueError, match="Unknown analysis engine 'bogus'"):
+        store.record_analysis(investigation.id, engine="bogus", payload={})
+
+    assert store.get_investigation(investigation.id).analyses == ()
+
+
 def test_store_rejects_process_local_memory_database() -> None:
     with pytest.raises(ValueError, match=":memory:"):
         InvestigationStore(":memory:")
