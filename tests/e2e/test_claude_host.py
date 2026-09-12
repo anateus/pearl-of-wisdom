@@ -3,6 +3,13 @@
 Run with ``PEARL_RUN_HOST_E2E=1 uv run pytest tests/e2e/test_claude_host.py``.
 The tests intentionally make networked model requests and are therefore off by
 default in normal unit-test runs.
+
+Each session runs from an empty workspace directory (not the repo root) so the
+model spends its turns on the routing prompt instead of exploring the repo.
+Sessions are judged on routing evidence -- which skill, if any, the model
+invoked -- not on answer completeness, so a session that ends by hitting
+``--max-turns`` before producing a final result is an acceptable outcome as
+long as the Skill-use assertions still hold.
 """
 
 from __future__ import annotations
@@ -19,6 +26,7 @@ ROOT = Path(__file__).parents[2]
 PLUGIN = ROOT / "plugins" / "pearl-of-wisdom"
 ROUTING_CASES = json.loads((PLUGIN / "evals" / "routing-cases.json").read_text())["cases"]
 SESSION_TIMEOUT_SECONDS = int(os.environ.get("PEARL_HOST_E2E_TIMEOUT_SECONDS", "180"))
+MAX_TURNS = int(os.environ.get("PEARL_HOST_E2E_MAX_TURNS", "6"))
 
 
 def _claude() -> str:
@@ -40,10 +48,17 @@ def _routing_case(label: str) -> dict[str, object]:
 
 
 def _session(
-    claude: str, prompt: str, tmp_path: Path, *, load_plugin: bool
+    claude: str, prompt: str, tmp_path: Path, *, label: str, load_plugin: bool
 ) -> tuple[list[dict[str, object]], str]:
-    """Run one noninteractive Claude session and expose host debug evidence."""
-    debug_log = tmp_path / ("with-plugin.debug" if load_plugin else "without-plugin.debug")
+    """Run one noninteractive Claude session and expose host debug evidence.
+
+    The session runs from an empty, per-session workspace directory (rather
+    than the repo root) so the model does not burn its turn budget exploring
+    the repo instead of routing the prompt.
+    """
+    workspace = tmp_path / label / "workspace"
+    workspace.mkdir(parents=True)
+    debug_log = workspace.parent / "session.debug"
     command = [
         claude,
         "--print",
@@ -62,7 +77,7 @@ def _session(
         "--permission-mode",
         "dontAsk",
         "--max-turns",
-        "3",
+        str(MAX_TURNS),
     ]
     if load_plugin:
         command.extend(["--plugin-dir", str(PLUGIN)])
@@ -78,7 +93,7 @@ def _session(
     try:
         completed = subprocess.run(
             command,
-            cwd=ROOT,
+            cwd=workspace,
             env=environment,
             capture_output=True,
             text=True,
@@ -97,21 +112,27 @@ def _session(
         events = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
     except json.JSONDecodeError as error:
         pytest.fail(f"Claude did not return JSONL output: {completed.stdout[:1000]!r} ({error})")
-    if completed.returncode:
-        failures = [event for event in events if event.get("type") == "result"]
+
+    results = [event for event in events if event.get("type") == "result"]
+    assert len(results) == 1, "Claude session did not emit exactly one result event"
+    result_event = results[0]
+    terminal_reason = result_event.get("terminal_reason")
+    ended_on_max_turns = (
+        result_event.get("subtype") == "error_max_turns" or terminal_reason == "max_turns"
+    )
+
+    if completed.returncode and not ended_on_max_turns:
         details = [
-            str(value)
-            for event in failures
-            for key in ("terminal_reason", "errors")
-            if (value := event.get(key))
+            str(value) for key in ("terminal_reason", "errors") if (value := result_event.get(key))
         ]
         detail = "; ".join(details) or completed.stderr[-1000:].strip() or "no error detail"
         pytest.fail(f"Claude noninteractive session failed ({completed.returncode}): {detail}")
 
-    results = [event for event in events if event.get("type") == "result"]
-    assert len(results) == 1, "Claude session did not emit exactly one result event"
-    result = results[0].get("result")
-    assert isinstance(result, str) and result.strip(), "Claude session returned no model result"
+    if not ended_on_max_turns:
+        # A max-turns ending is judged on routing evidence alone (see module
+        # docstring), so only a "successful" ending must carry a real answer.
+        result = result_event.get("result")
+        assert isinstance(result, str) and result.strip(), "Claude session returned no model result"
     return events, debug_log.read_text(errors="replace") if debug_log.exists() else ""
 
 
@@ -162,8 +183,12 @@ def test_claude_plugin_routes_positive_prompt_and_leaves_negative_prompt_unroute
     positive_prompt = f"{positive_case['prompt']} Use any applicable installed skill first."
     negative_prompt = f"{negative_case['prompt']} Use any applicable installed skill first."
 
-    positive, positive_debug = _session(claude, positive_prompt, tmp_path, load_plugin=True)
-    negative, negative_debug = _session(claude, negative_prompt, tmp_path, load_plugin=True)
+    positive, positive_debug = _session(
+        claude, positive_prompt, tmp_path, label="positive", load_plugin=True
+    )
+    negative, negative_debug = _session(
+        claude, negative_prompt, tmp_path, label="negative", load_plugin=True
+    )
 
     positive_skills = _skill_uses(positive)
     negative_skills = _skill_uses(negative)
