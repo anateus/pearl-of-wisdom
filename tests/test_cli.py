@@ -10,7 +10,7 @@ def test_cli_version_does_not_open_database(tmp_path: Path, capsys) -> None:
     database = tmp_path / "missing" / "pearl.sqlite3"
     assert main(["--db", str(database), "--version"]) == 0
     captured = capsys.readouterr()
-    assert captured.out == "pearl-of-wisdom 0.1.3\n"
+    assert captured.out == "pearl-of-wisdom 0.2.0\n"
     assert captured.err == ""
     assert not database.exists()
 

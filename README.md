@@ -17,7 +17,10 @@ The Python package has no runtime dependencies. It provides:
 - a JSON command-line interface;
 - SQLite investigations with separate context, assumptions, evidence, and analyses;
 - bounded, seeded Monte Carlo simulation for independent numeric inputs;
-- exact enumeration for small discrete Bayesian networks.
+- exact enumeration for small discrete Bayesian networks;
+- expected utility, regret, and the value of perfect or sample information;
+- interventions in explicitly supplied discrete causal models;
+- bounded, seeded simulation of a FIFO worker queue with contention, retries, and waiting timeouts.
 
 The repository also contains a shared [Codex and Claude plugin](plugins/pearl-of-wisdom) with two skills:
 
@@ -135,7 +138,58 @@ result = DiscreteBayesEngine().analyze(
 )
 ```
 
-The engine validates cycles, states, table coverage, normalization, impossible evidence, and state-space size. Its default limit is 4,096 joint states. It performs observational Bayesian inference only; it does not identify causal effects.
+The engine validates cycles, states, table coverage, normalization, impossible evidence, and state-space size. Its default limit is 4,096 joint states. `discrete-bayes` performs observational inference. Use the separate `causal` engine for interventions under explicit causal assumptions.
+
+## Decision analysis and value of information
+
+`decision-analysis` takes state probabilities, actions with per-state utilities, and optional tests with observation likelihoods and costs. It reports expected utilities, all optimal actions, regret, expected value of perfect information (`evpi`), and each test's gross and net expected value of sample information (`evsi`, `net_evsi`). Test costs use the same utility scale as the action payoffs.
+
+```bash
+uv run pearl-of-wisdom analyze --engine decision-analysis --data '{
+  "states": {"good": 0.4, "bad": 0.6},
+  "actions": {
+    "launch": {"good": 100, "bad": -40},
+    "wait": {"good": 0, "bad": 0}
+  },
+  "tests": {
+    "pilot": {
+      "cost": 2,
+      "likelihoods": {
+        "good": {"positive": 0.8, "negative": 0.2},
+        "bad": {"positive": 0.2, "negative": 0.8}
+      }
+    }
+  }
+}'
+```
+
+These illustrative inputs make `launch` optimal at expected utility 16. Perfect information is worth 24 utility units; the pilot is worth 11.2 before its cost and 9.2 after it. Each test is evaluated independently as an alternative to acting now. The engine does not optimize sequences of experiments. See the [decision-analysis reference](plugins/pearl-of-wisdom/skills/reasoning-under-uncertainty/references/decision-analysis.md) for the request and output rules.
+
+## Causal interventions
+
+`causal` reuses the discrete network format and requires `interventions`, `query`, and a nonempty list of `assumptions`. It validates the original network, replaces the intervened variables' mechanisms, then calculates the query distribution. Optional `evidence` conditions on the resulting intervened model.
+
+```bash
+uv run pearl-of-wisdom analyze --engine causal --example
+```
+
+An intervention can change the result even when the same variable and value appear in observational evidence. The engine calculates effects under the supplied causal model; it does not establish that the graph is correct, discover confounders, or identify effects from arbitrary datasets. Its default state-space limit is 4,096 joint states. The [causal reference](plugins/pearl-of-wisdom/skills/reasoning-under-uncertainty/references/causal.md) explains the assumptions and evidence semantics.
+
+## System simulation
+
+`system-simulation` models one FIFO queue feeding a fixed number of workers. It accepts a fixed arrival schedule or a finite sampled arrival process, fixed or sampled service times, optional waiting capacity and timeout, and failures with bounded retries. A simulated clock advances through events until the horizon; no daemon is involved.
+
+```bash
+uv run pearl-of-wisdom analyze --engine system-simulation --data '{
+  "arrivals": {"times": [0, 1, 2]},
+  "service_time": 3,
+  "servers": 1,
+  "horizon": 10,
+  "seed": 7
+}'
+```
+
+This queue completes three jobs with response times 3, 5, and 7 time units. The worker is busy for 9 of the 10 time units. Results include throughput, delay, time-average queue length, utilization, and unfinished work. The [simulation reference](plugins/pearl-of-wisdom/skills/reasoning-under-uncertainty/references/system-simulation.md) defines the measurement window, event ordering, limits, and supported distributions. General networks of queues and arbitrary process scripts are outside this engine's scope.
 
 ## Codex and Claude skills
 
@@ -156,11 +210,11 @@ Hindsight is optional. If it is present, the skills may use it for continuity. R
 The plugin uses a one-time installation of its Python CLI. From this checkout:
 
 ```bash
-uv tool install --reinstall ./plugins/pearl-of-wisdom/cli/pearl_of_wisdom-0.1.3-py3-none-any.whl
+uv tool install --reinstall ./plugins/pearl-of-wisdom/cli/pearl_of_wisdom-0.2.0-py3-none-any.whl
 python3 ./plugins/pearl-of-wisdom/scripts/check_cli.py
 ```
 
-The [compatibility check](plugins/pearl-of-wisdom/scripts/check_cli.py) accepts CLI versions `>=0.1.3,<0.2.0` and returns the installed executable's absolute path. Missing, older, newer-minor, and unrecognized versions stop the workflow with an exact install command for this plugin's wheel. The check reads the required version from the plugin manifest; later stable patches in the same minor release are compatible.
+The [compatibility check](plugins/pearl-of-wisdom/scripts/check_cli.py) accepts CLI versions `>=0.2.0,<0.3.0` and returns the installed executable's absolute path. Missing, older, newer-minor, and unrecognized versions stop the workflow with an exact install command for this plugin's wheel. The check reads the required version from the plugin manifest; later stable patches in the same minor release are compatible.
 
 Both host skills run the installed executable directly after this check. Normal use needs Python and access to the investigation database, without writable uv caches or tool directories. `uv` is needed for installation and updates. If the host requires approval to write its tool directories, approve that install command or run it in a terminal, then rerun the check. Installation does not change later commands' sandbox permissions. Python 3 must be available as `python3` for the plugin check and hook.
 
@@ -183,7 +237,7 @@ Both tests skip when `PEARL_RUN_HOST_E2E` is unset or the required host CLI is m
 
 There is no daemon in this release. Direct CLI calls avoid another lifecycle and protocol while startup cost is negligible. A local daemon becomes useful if measurements show repeated startup cost, concurrent clients, subscriptions, or coordination needs.
 
-Causal inference, value-of-information calculations, system simulation, dependent Monte Carlo inputs, schema migrations, and automatic engine-result persistence are also deferred. The skills may suggest these methods, but they do not imply that Pearl implements them.
+Dependent Monte Carlo inputs, schema migrations, and automatic engine-result persistence remain deferred. Record results from any engine with `record-analysis` when they need to be kept. Causal discovery, general causal estimation from datasets, sequential experiment optimization, and general networks of queues are also outside the current engine scope.
 
 ## Development
 

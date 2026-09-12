@@ -15,6 +15,7 @@ from pathlib import Path
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
     required = json.loads((root / ".codex-plugin" / "plugin.json").read_text())["version"]
+    required = required.split("+", 1)[0]
     minimum = tuple(int(part) for part in required.split("."))
     maximum = (minimum[0], minimum[1] + 1, 0)
     supported = f">={required},<{'.'.join(map(str, maximum))}"

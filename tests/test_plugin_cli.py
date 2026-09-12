@@ -5,6 +5,7 @@ import sqlite3
 import subprocess
 import sys
 import tomllib
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
@@ -100,6 +101,36 @@ def test_installed_cli_and_check_run_without_uv_or_installation_writes(tmp_path:
     )
     assert rerun.returncode == 0, rerun.stderr
     assert json.loads(rerun.stdout) == discovered["result"]
+    for engine in ("decision-analysis", "causal", "system-simulation"):
+        example = subprocess.run(
+            [*prefix, info["executable"], "analyze", "--engine", engine, "--example"],
+            cwd=workspace,
+            env=environment,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert example.returncode == 0, example.stderr
+        payload = json.loads(example.stdout)
+        assert payload["result"]["engine"] == engine.replace("-", "_")
+        rerun = subprocess.run(
+            [
+                *prefix,
+                info["executable"],
+                "analyze",
+                "--engine",
+                engine,
+                "--data",
+                json.dumps(payload["request"]),
+            ],
+            cwd=workspace,
+            env=environment,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert rerun.returncode == 0, rerun.stderr
+        assert json.loads(rerun.stdout) == payload["result"]
     misspelled = discovered["request"] | {"observations": {"alarm": "positive"}}
     rejected = subprocess.run(
         [
@@ -145,3 +176,10 @@ def test_package_and_both_plugins_agree_on_the_installed_version() -> None:
     assert VERSION == __version__
     for manifest in (".claude-plugin", ".codex-plugin"):
         assert json.loads((PLUGIN / manifest / "plugin.json").read_text())["version"] == VERSION
+
+
+def test_bundled_wheel_contains_the_current_package_sources() -> None:
+    source = ROOT / "src"
+    with zipfile.ZipFile(WHEEL) as wheel:
+        for path in (source / "pearl_of_wisdom").rglob("*.py"):
+            assert wheel.read(path.relative_to(source).as_posix()) == path.read_bytes(), path

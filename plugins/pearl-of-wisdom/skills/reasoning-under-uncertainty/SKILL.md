@@ -9,7 +9,7 @@ Make uncertainty explicit, then choose the cheapest method that can change the d
 
 1. State the question, decision, estimand, assumptions, and evidence already available. Separate observations from hypotheses and label unknowns.
 2. Read [routing.md](references/routing.md). Select one primary route and explain why it fits. Use no model when the uncertainty is immaterial, the inputs are not identifiable, or a qualitative answer is safer.
-3. Read only the reference for the selected route. Keep inputs, units, seed, priors, and sensitivity choices reproducible. Never present invented inputs as measurements.
+3. Read only the reference for the selected route. It identifies any supported Pearl engine and its input limits. Before using the CLI, run the [compatibility check](../../scripts/check_cli.py) with `python3` and use its returned `executable`; discover that engine's request with `analyze --engine ENGINE --example`. Keep inputs, units, seed, priors, and sensitivity choices reproducible. Never present invented inputs as measurements.
 4. Report a range or distribution, the assumptions that drive it, and what evidence would change the conclusion. Distinguish model uncertainty from sampling uncertainty.
 
 Use a lower activation floor: a rough bound, a small sensitivity table, or a short list of unknowns is worthwhile when uncertainty is modest but decision-relevant. Do not manufacture probabilities for subjective language, treat correlation as causation, or use a simulation to disguise missing data.

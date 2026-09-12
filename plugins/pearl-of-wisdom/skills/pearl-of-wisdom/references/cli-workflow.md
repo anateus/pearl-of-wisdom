@@ -17,6 +17,9 @@ To discover each engine's input shape without reading package source, ask `analy
 ```bash
 pearl-of-wisdom analyze --engine discrete-bayes --example
 pearl-of-wisdom analyze --engine monte-carlo --example
+pearl-of-wisdom analyze --engine decision-analysis --example
+pearl-of-wisdom analyze --engine causal --example
+pearl-of-wisdom analyze --engine system-simulation --example
 ```
 
 The current public seams include `create`, `list`, `show`, `promote`, `analyze`, and record commands such as `record-context`, `record-assumption`, `record-evidence`, and `record-analysis`. Use their JSON output as the handoff between turns. If a release names resume or promote differently, follow that release's help text and verify with `show`.

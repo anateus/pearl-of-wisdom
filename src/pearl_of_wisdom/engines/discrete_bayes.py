@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import itertools
 import math
+import sys
 from collections import defaultdict
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -38,7 +39,10 @@ def _require_mapping(value: object, *, label: str) -> Mapping[str, object]:
 def _require_probability(value: object, *, label: str) -> float:
     if isinstance(value, bool) or not isinstance(value, int | float):
         raise DiscreteBayesValidationError(f"{label} must be numeric")
-    probability = float(value)
+    try:
+        probability = float(value)
+    except OverflowError as error:
+        raise DiscreteBayesValidationError(f"{label} must be between 0 and 1") from error
     if not math.isfinite(probability) or not 0 <= probability <= 1:
         raise DiscreteBayesValidationError(f"{label} must be between 0 and 1")
     return probability
@@ -69,6 +73,15 @@ class DiscreteBayesEngine:
         variables = self._network(request_map.get("network"))
         query = self._query(request_map.get("query"), variables)
         evidence = self._evidence(request_map.get("evidence", {}), variables, label="evidence")
+        return self._analyze_network(variables, query, evidence)
+
+    def _analyze_network(
+        self,
+        variables: Mapping[str, Variable],
+        query: tuple[str, ...],
+        evidence: Mapping[str, str],
+    ) -> AnalysisResult:
+        """Enumerate a validated network, query, and evidence assignment."""
         order = self._topological_order(variables)
         assignments = self._joint_distribution(order, variables)
         evidence_probability = 0.0
@@ -345,6 +358,14 @@ class DiscreteBayesEngine:
                 distribution = variable.cpt[parent_key]
                 for state in variable.states:
                     probability = partial_probability * distribution[state]
+                    if (
+                        probability < sys.float_info.min
+                        and partial_probability > 0
+                        and distribution[state] > 0
+                    ):
+                        raise DiscreteBayesValidationError(
+                            "joint probability underflow exceeds floating-point precision"
+                        )
                     next_assignments.append((partial | {name: state}, probability))
             assignments = next_assignments
         return assignments
