@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-14T21:01:14Z",
+  "generatedAt": "2026-09-14T23:19:31Z",
   "title": "Design System: Pearl Visualization",
   "extensions": {
     "colorMeta": {
@@ -55,11 +55,35 @@
       "code": {
         "displayName": "Source Detail",
         "purpose": "Identifies draw-selection methods and source hashes."
+      },
+      "report-question": {
+        "displayName": "Report Question",
+        "purpose": "Names the report's question with balanced wrapping and a 23ch measure."
+      },
+      "report-title": {
+        "displayName": "Report Section",
+        "purpose": "Introduces the outcome chart, model explanation, assumptions, and limitations."
+      },
+      "report-scenario": {
+        "displayName": "Selected Scenario",
+        "purpose": "Names the selected scenario above its conditional answer."
+      },
+      "report-body": {
+        "displayName": "Report Reading Text",
+        "purpose": "Carries the model explanation and supporting notes with a 73ch measure."
+      },
+      "report-answer": {
+        "displayName": "Conditional Answer",
+        "purpose": "States the simulated frequency as a complete sentence, capped at 57ch."
       }
     },
     "breakpoints": [
       {
         "name": "narrow-records",
+        "value": "640px"
+      },
+      {
+        "name": "report-reflow",
         "value": "640px"
       }
     ]
@@ -104,11 +128,51 @@
       "description": "A visible record of runtime versions and the source SHA-256 for each result.",
       "html": "<ul class=\"ds-provenance-list\"><li>Result: Pearl 0.3.0, Python 3.12.13; source SHA-256 <code>7c484ba56e1c0b32a5024530873196b8eb346c583f4b79ae0069bcc146c744bb</code></li></ul>",
       "css": ".ds-provenance-list { color: var(--ink); font-family: \"Avenir Next\", Avenir, \"Segoe UI\", sans-serif; line-height: 1.5; } .ds-provenance-list code { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, monospace; }"
+    },
+    {
+      "name": "Report Question and Answer",
+      "kind": "custom",
+      "refersTo": "report-answer",
+      "description": "A question, illustrative-data note, conditional answer, exact count, and labeled interval values.",
+      "html": "<div class=\"ds-report-reading\"><header class=\"ds-report-question\"><h1>Will this project finish within 30 working days?</h1><p>Illustrative example. Inputs are synthetic, not observations.</p></header><article class=\"ds-report-answer\"><h2>Current scope</h2><p class=\"ds-report-lead\"><span>Under these assumptions,</span> about 46 in 100 simulated projects have completion time at or below 30 working days.</p><p class=\"ds-report-count\"><strong>4,568 of 10,000</strong> simulated outcomes meet the target. Each simulation is one possible outcome of this model.</p><dl class=\"ds-report-interval-values\"><div><dt>Median: at least half are at or below</dt><dd>30.86 <span>working days</span></dd></div><div><dt>The middle 90% fall between</dt><dd>20.8 and 44.84 <span>working days</span></dd></div></dl><p class=\"ds-report-interval-note\">This range describes the spread of simulated outcomes, not confidence in the estimated chance or a promise about a real outcome.</p></article></div>",
+      "css": ".ds-report-reading { background: var(--paper); color: var(--ink); font-family: \"Avenir Next\", Avenir, \"Segoe UI\", sans-serif; font-size: 16px; line-height: 1.6; } .ds-report-reading p { margin: 12px 0; max-width: 73ch; overflow-wrap: anywhere; } .ds-report-question { padding-bottom: 18px; } .ds-report-question h1 { max-width: 23ch; font-family: \"Iowan Old Style\", \"Palatino Linotype\", Palatino, Georgia, serif; font-size: clamp(2rem, 3.4vw, 3.1rem); font-weight: 600; line-height: 1.18; letter-spacing: -0.025em; margin: 0 0 18px; text-wrap: balance; } .ds-report-question p { color: var(--muted); margin: 0; } .ds-report-answer { border-top: 1px solid var(--rule); padding-top: 18px; margin-bottom: 18px; } .ds-report-answer h2 { font-family: \"Iowan Old Style\", \"Palatino Linotype\", Palatino, Georgia, serif; font-size: 1.15rem; font-weight: 600; line-height: 1.18; color: var(--muted); margin: 0 0 16px; } .ds-report-answer .ds-report-lead { font-size: clamp(1.25rem, 2.1vw, 1.75rem); line-height: 1.4; max-width: 57ch; } .ds-report-lead span { color: var(--muted); } .ds-report-count { font-size: 0.95rem; } .ds-report-count strong { font-variant-numeric: tabular-nums; } .ds-report-interval-values { display: flex; flex-wrap: wrap; gap: 20px 70px; margin: 26px 0 12px; } .ds-report-interval-values dt { color: var(--muted); font-size: 0.88rem; } .ds-report-interval-values dd { margin: 6px 0 0; font-size: 1.3rem; font-variant-numeric: tabular-nums; } .ds-report-interval-values dd span { font-size: 0.95rem; } .ds-report-interval-note { color: var(--muted); font-size: 0.9rem; } @media (max-width: 640px) { .ds-report-question { padding-bottom: 20px; } .ds-report-question h1 { font-size: 2rem; } .ds-report-answer .ds-report-lead { font-size: 1.25rem; } .ds-report-interval-values { gap: 16px; flex-direction: column; } }"
+    },
+    {
+      "name": "Saved-scenario Control",
+      "kind": "input",
+      "refersTo": "report-scenario-control",
+      "description": "Native radios select a saved scenario; checked labels and charts use cobalt without implying rank.",
+      "html": "<fieldset class=\"ds-report-scenarios\"><legend>Choose a saved scenario</legend><div class=\"ds-report-options\"><label><input type=\"radio\" name=\"ds-report-scenario\" checked><span>Current scope</span></label><label><input type=\"radio\" name=\"ds-report-scenario\"><span>20% less work</span></label></div></fieldset>",
+      "css": ".ds-report-scenarios { border: 0; padding: 0; margin: 4px 0 18px; background: var(--paper); color: var(--ink); font-family: \"Avenir Next\", Avenir, \"Segoe UI\", sans-serif; font-size: 16px; line-height: 1.6; } .ds-report-scenarios legend { font-size: 0.9rem; color: var(--muted); padding: 0 0 8px; } .ds-report-options { display: flex; flex-wrap: wrap; gap: 10px 24px; } .ds-report-options label { display: flex; align-items: center; gap: 9px; cursor: pointer; padding: 7px 0; } .ds-report-options input { accent-color: var(--accent); width: 18px; height: 18px; margin: 0; flex-shrink: 0; } .ds-report-options label:has(input:checked) { color: var(--accent); font-weight: 600; } .ds-report-options input:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; } @media (max-width: 640px) { .ds-report-options { gap: 4px 18px; } }"
+    },
+    {
+      "name": "Model Arithmetic",
+      "kind": "custom",
+      "refersTo": "report-model-map",
+      "description": "Named inputs and units connect to the selected scenario's formula; the arrow reflows downward on mobile.",
+      "html": "<div class=\"ds-report-model\"><div class=\"ds-report-model-map\"><ul><li>Remaining work<span>engineer-days</span></li><li>Effective daily capacity<span>engineer-days per working day</span></li><li>External delay<span>working days</span></li></ul><svg class=\"ds-report-arrow\" viewBox=\"0 0 64 24\" aria-hidden=\"true\"><path d=\"M2 12h56m-9-8 9 8-9 8\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><div class=\"ds-report-formula\"><p class=\"ds-report-model-scenario\">Current scope</p><code>work / capacity + delay</code><p>Model arithmetic produces <strong>completion time</strong>.</p></div></div><p class=\"ds-report-model-caption\">The arrows describe the calculation. They do not establish cause and effect. Inputs are sampled independently.</p></div>",
+      "css": ".ds-report-model { background: var(--paper); color: var(--ink); font-family: \"Avenir Next\", Avenir, \"Segoe UI\", sans-serif; font-size: 16px; line-height: 1.6; } .ds-report-model-map { display: grid; grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1.15fr); align-items: center; gap: 24px; margin: 28px 0 12px; padding: 24px 0; border-block: 1px solid var(--rule); } .ds-report-model-map ul { list-style: none; margin: 0; padding: 0; } .ds-report-model-map li { padding: 9px 0; font-weight: 600; } .ds-report-model-map li span { display: block; color: var(--muted); font-weight: 400; font-size: 0.82rem; } .ds-report-arrow { width: 64px; color: var(--muted); } .ds-report-formula code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.95rem; overflow-wrap: anywhere; } .ds-report-formula p { font-size: 0.88rem; margin: 12px 0; overflow-wrap: anywhere; } .ds-report-formula .ds-report-model-scenario { color: var(--muted); margin: 0 0 8px; } .ds-report-model-caption { color: var(--muted); font-size: 0.85rem; max-width: 73ch; margin: 12px 0; } @media (max-width: 640px) { .ds-report-model-map { grid-template-columns: 1fr; gap: 10px; } .ds-report-arrow { transform: rotate(90deg); margin: 8px auto; } .ds-report-model-map ul { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .ds-report-formula { padding-top: 6px; } }"
+    },
+    {
+      "name": "Assumptions Table",
+      "kind": "custom",
+      "refersTo": "report-assumptions",
+      "description": "Input meanings, distributions, units, and written evidence status stay together when rows stack on mobile.",
+      "html": "<table class=\"ds-report-assumptions\"><thead><tr><th>Input</th><th>Meaning and values</th><th>Evidence supplied by the author</th></tr></thead><tbody><tr><th scope=\"row\">Remaining work<code>work</code></th><td><p>Work ranges from 60 to 150 engineer-days, with 90 the most likely value. One engineer-day is one person's full day of work.</p><p class=\"ds-report-distribution\">From 60 to 150; most likely 90. A triangular distribution: likelihood tapers linearly away from the most likely value toward the bounds.<span>engineer-days</span></p></td><td><strong class=\"ds-report-evidence-status\">Assumed</strong><p>Synthetic teaching values, not observed team data.</p></td></tr></tbody></table>",
+      "css": ".ds-report-assumptions { background: var(--paper); color: var(--ink); font-family: \"Avenir Next\", Avenir, \"Segoe UI\", sans-serif; line-height: 1.6; border-collapse: collapse; width: 100%; font-size: 0.94rem; table-layout: fixed; } .ds-report-assumptions th, .ds-report-assumptions td { text-align: left; vertical-align: top; padding: 16px 16px 16px 0; border-bottom: 1px solid var(--rule); overflow-wrap: anywhere; } .ds-report-assumptions thead th { font-size: 0.8rem; color: var(--muted); font-weight: 500; } .ds-report-assumptions th:first-child { width: 23%; } .ds-report-assumptions th:last-child { width: 29%; } .ds-report-assumptions tbody th { font-weight: 600; } .ds-report-assumptions tbody th code { display: block; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.78rem; color: var(--muted); margin-top: 5px; } .ds-report-assumptions td p { margin: 0 0 8px; } .ds-report-distribution { font-size: 0.86rem; color: var(--muted); } .ds-report-distribution span { display: block; } .ds-report-evidence-status { font-size: 0.83rem; font-weight: 600; } .ds-report-evidence-status + p { font-size: 0.85rem; color: var(--muted); margin-top: 6px; } @media (max-width: 640px) { .ds-report-assumptions, .ds-report-assumptions tbody, .ds-report-assumptions tr, .ds-report-assumptions th, .ds-report-assumptions td { display: block; width: 100% !important; } .ds-report-assumptions thead { display: none; } .ds-report-assumptions tbody tr { padding: 14px 0; border-bottom: 1px solid var(--rule); } .ds-report-assumptions th, .ds-report-assumptions td { padding: 6px 0; border: 0; } .ds-report-assumptions td:last-child { padding-top: 12px; } }"
+    },
+    {
+      "name": "Report Audit Disclosure",
+      "kind": "custom",
+      "refersTo": "report-audit",
+      "description": "A native disclosure keeps exact numbers and source detail available below the visible interpretation and limitations.",
+      "html": "<details class=\"ds-report-audit\"><summary>Inspect the distribution, exact numbers, and sources</summary><p>The middle 90% interval runs from the 5th to the 95th percentile. Tied values can put more than 90% inside these endpoints. Displayed intervals are rounded; exact values appear below.</p><section><h3>Current scope</h3><p>4,568 of 10,000 outcomes meet the target; exact fraction 0.4568.</p></section></details>",
+      "css": ".ds-report-audit { background: var(--paper); color: var(--ink); font-family: \"Avenir Next\", Avenir, \"Segoe UI\", sans-serif; font-size: 16px; line-height: 1.6; margin: 18px 0; border-block: 1px solid var(--rule); padding: 8px 0; } .ds-report-audit > summary { cursor: pointer; padding: 12px 0; font-weight: 600; font-size: 1.02rem; text-underline-offset: 4px; } .ds-report-audit > summary:hover { color: var(--accent); } .ds-report-audit > summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; } .ds-report-audit > section { padding: 12px 0 24px; border-bottom: 1px solid var(--rule); } .ds-report-audit h3 { font-family: \"Iowan Old Style\", \"Palatino Linotype\", Palatino, Georgia, serif; font-size: 1.15rem; line-height: 1.18; margin: 24px 0 12px; } .ds-report-audit p { max-width: 73ch; margin: 12px 0; overflow-wrap: anywhere; font-size: 0.88rem; }"
     }
   ],
   "narrative": {
     "northStar": "The Statistical Audit Sheet",
-    "overview": "Each visualization reads as the audit sheet for one computation. Warm paper, dark ink, thin rules, and a single cobalt data color give the chart enough visual authority without competing with the numerical result.\n\nThe document shell stays editorial and restrained. It puts the quantity and unit first, gives most of the width to the chart, then keeps full-run summaries, retained-draw coverage, provenance, resource requirements, and calibration limits in the same reading path.",
+    "overview": "Each visualization reads as the audit sheet for one computation. Warm paper, dark ink, thin rules, and a single cobalt data color give the chart enough visual authority without competing with the numerical result.\n\nThe document shell stays editorial and restrained. Raw-plot artifacts put the quantity and unit first, give most of the width to the chart, then keep full-run summaries, retained-draw coverage, provenance, resource requirements, and calibration limits in the same reading path.\n\nExplanatory reports extend this system with a question, a conditional answer, and the model behind it. They use larger reading type, a shared chart scale, and native scenario controls. Assumptions and limitations remain in the main document; exact values and source details sit in an audit disclosure.",
     "keyCharacteristics": [
       "Warm paper and dark ink establish a quiet reading surface.",
       "Cobalt identifies data and focus without encoding rank.",
@@ -118,18 +182,21 @@
     ],
     "rules": [],
     "dos": [
-      "**Do** keep the quantity and unit immediately above a width-dominant chart.",
-      "**Do** keep full-run statistics, retained-draw coverage, provenance, resource requirements, and calibration limits visible around the chart.",
+      "**Do** keep the quantity and unit immediately above a width-dominant chart in raw-plot artifacts.",
+      "**Do** keep full-run statistics, retained-draw coverage, provenance, resource requirements, and calibration limits visible around raw plots.",
       "**Do** use cobalt for statistical marks and keyboard focus, with tabular figures for comparable numbers.",
       "**Do** reflow summary rows into labeled records at the 640px threshold.",
-      "**Do** preserve raw source values in hover details and recognizable Bokeh controls."
+      "**Do** preserve raw source values in hover details and recognizable Bokeh controls.",
+      "**Do** keep report answers, model explanations, and chart emphasis synchronized with the selected scenario.",
+      "**Do** preserve the shared interval scale and label the target, median, and middle 90% in reports."
     ],
     "donts": [
       "**Don't** use color to imply scenario rank or create decorative categories.",
       "**Don't** add shadows, gradients, paper texture, ornamental composition, or an oversized numeral to the audit sheet.",
-      "**Don't** hide source hashes, subset limits, resource requirements, or calibration caveats behind interaction.",
+      "**Don't** hide source hashes, subset limits, resource requirements, or calibration caveats behind interaction in raw-plot artifacts.",
       "**Don't** depend on horizontal clipping to expose a summary value on narrow screens.",
-      "**Don't** reuse the plot's statistical marks as decorative interface motifs."
+      "**Don't** reuse the plot's statistical marks as decorative interface motifs.",
+      "**Don't** move the report's assumptions, interval explanation, or model limitations into its audit disclosure."
     ]
   }
 }

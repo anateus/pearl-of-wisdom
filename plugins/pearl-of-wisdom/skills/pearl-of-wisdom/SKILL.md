@@ -7,7 +7,7 @@ description: Create, resume, and promote durable probabilistic investigations wi
 
 Use the installed `pearl-of-wisdom` CLI as the durable record for an investigation. Keep the record small, inspectable, and separate from the agent's transient reasoning.
 
-1. Run the [CLI compatibility check](../../scripts/check_cli.py) with `python3` before creating or changing an investigation. Resolve that script relative to this loaded `SKILL.md`, so it belongs to the active plugin version. The check accepts CLI 0.3.0 or a later stable 0.3.x patch release and returns JSON with the compatible executable's absolute path.
+1. Run the [CLI compatibility check](../../scripts/check_cli.py) with `python3` before creating or changing an investigation. Resolve that script relative to this loaded `SKILL.md`, so it belongs to the active plugin version. The check accepts CLI 0.4.0 or a later stable 0.4.x patch release and returns JSON with the compatible executable's absolute path.
 
    Use the returned `executable` for subsequent commands. The check and the installed CLI do not run `uv` or install packages. Do not replace them with `uvx`, `uv run`, or `uv tool run`.
 

@@ -11,7 +11,7 @@ def test_companion_metadata_keeps_backends_out_of_core_package() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
 
     assert project["name"] == "pearl-of-wisdom-viz"
-    assert project["version"] == __version__ == "0.1.0"
+    assert project["version"] == __version__ == "0.2.0"
     assert project["scripts"] == {"pearl-of-wisdom-viz": "pearl_of_wisdom_viz.cli:main"}
     assert "matplotlib" not in " ".join(project["dependencies"]).lower()
     assert project["optional-dependencies"]["matplotlib"] == ["matplotlib==3.11.2"]

@@ -31,3 +31,5 @@ create → record context/assumptions → record evidence → analyze → record
 ```
 
 Use a stable investigation ID when passing work between agents. Treat a nonzero exit status or structured error as a failed operation; do not claim that an entry was recorded until `show` confirms it.
+
+When an optional visualization is useful, preserve its JSON descriptor with `record-analysis`. Keep the report, context, and saved results at the descriptor's recorded paths; SQLite does not copy them. Open the report before presenting it as inspected. For a general reader, use `pearl-of-wisdom-viz explain` with an authored question and evidence context; raw distribution and forest plots remain useful for statistical inspection. The companion is optional and is not installed by the CLI compatibility check.

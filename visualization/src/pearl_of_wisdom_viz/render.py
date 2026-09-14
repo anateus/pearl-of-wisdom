@@ -166,9 +166,7 @@ a:focus-visible,button:focus-visible{{outline:3px solid var(--accent);outline-of
 </main></body></html>"""
 
 
-def _bokeh_html(
-    model: Any, *, resources: str, document: dict[str, Any]
-) -> tuple[bytes, dict[str, str] | None]:
+def _bokeh_resources(resources: str) -> tuple[str, str, dict[str, str] | None, str]:
     shared_asset = None
     failure_message = ""
     if resources == "inline":
@@ -191,6 +189,13 @@ def _bokeh_html(
         )
     else:
         raise VisualizationError(f"HTML resource mode {resources!r} is unsupported")
+    return resource_html, note, shared_asset, failure_message
+
+
+def _bokeh_html(
+    model: Any, *, resources: str, document: dict[str, Any]
+) -> tuple[bytes, dict[str, str] | None]:
+    resource_html, note, shared_asset, failure_message = _bokeh_resources(resources)
     script, div = components(model)
     content = _static_document(
         plot_html=f"{failure_message}{div}{resource_html}{script}",

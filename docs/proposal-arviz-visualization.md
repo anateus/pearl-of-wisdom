@@ -4,6 +4,8 @@ Status: implemented 2026-09-14 in Pearl 0.3.0 and `pearl-of-wisdom-viz` 0.1.0. R
 
 Implementation lives in the core [Monte Carlo engine](../src/pearl_of_wisdom/engines/monte_carlo.py) and the separate [visualization package](../visualization). The companion uses ArviZ's neutral `predictions` group and `sample` dimension for distribution input, then supplies exact empirical steps and full-run forest statistics to Bokeh or Matplotlib. Visualization dependencies do not enter Pearl core or the bundled plugin wheel.
 
+The [explanatory visualization plan](plan-explanatory-visualization.md) describes the next phase: reports that explain a question, model, assumptions, and scenario changes to readers without statistics training. That phase is planned, not implemented.
+
 ## Purpose and scope
 
 Add optional plots when a distribution's shape or a comparison between scenarios helps explain a Pearl result. The first release covers Monte Carlo outcome distributions and scenario intervals through a separate `pearl-of-wisdom-viz` package. Pearl's core keeps zero runtime dependencies and its existing JSON CLI.

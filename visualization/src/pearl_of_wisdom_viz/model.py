@@ -5,8 +5,9 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import operator
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 MAX_INPUT_BYTES = 16 * 1024 * 1024
@@ -54,6 +55,24 @@ class PearlResult:
     draws: Draws | None
     metadata: dict[str, Any]
     source_sha256: str
+    thresholds: dict[str, Threshold] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class Threshold:
+    operator: str
+    value: float
+    matched: int
+    total: int
+
+    @property
+    def fraction(self) -> float:
+        return self.matched / self.total
+
+    def matches(self, value: float) -> bool:
+        return {"lt": operator.lt, "le": operator.le, "gt": operator.gt, "ge": operator.ge}[
+            self.operator
+        ](value, self.value)
 
 
 def _duplicate_safe_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -92,7 +111,10 @@ def _integer(value: object, path: str, *, minimum: int | None = None) -> int:
 def _number(value: object, path: str) -> float:
     if isinstance(value, bool) or not isinstance(value, int | float):
         raise VisualizationError(f"{path} must be numeric")
-    result = float(value)
+    try:
+        result = float(value)
+    except OverflowError as error:
+        raise VisualizationError(f"{path} must be finite") from error
     if not math.isfinite(result):
         raise VisualizationError(f"{path} must be finite")
     return result
@@ -101,9 +123,7 @@ def _number(value: object, path: str) -> float:
 def _summary(data: Mapping[str, Any]) -> Summary:
     count = _integer(data.get("count"), "data.count", minimum=1)
     mean = _number(data.get("mean"), "data.mean")
-    standard_deviation = _number(
-        data.get("standard_deviation"), "data.standard_deviation"
-    )
+    standard_deviation = _number(data.get("standard_deviation"), "data.standard_deviation")
     minimum = _number(data.get("minimum"), "data.minimum")
     maximum = _number(data.get("maximum"), "data.maximum")
     if standard_deviation < 0:
@@ -144,9 +164,7 @@ def _draws(value: object, summary: Summary) -> Draws:
     draw_map = _mapping(value, "data.draws")
     version = _integer(draw_map.get("schema_version"), "data.draws.schema_version")
     if version != 1:
-        raise VisualizationError(
-            f"data.draws.schema_version {version} is unsupported; expected 1"
-        )
+        raise VisualizationError(f"data.draws.schema_version {version} is unsupported; expected 1")
     population = _integer(draw_map.get("population"), "data.draws.population", minimum=1)
     returned = _integer(draw_map.get("returned"), "data.draws.returned", minimum=1)
     if population != summary.count:
@@ -193,19 +211,20 @@ def _draws(value: object, summary: Summary) -> Draws:
         effective_request.get("variables"),
         "data.draws.provenance.effective_request.variables",
     )
-    if _integer(
-        effective_request.get("samples"),
-        "data.draws.provenance.effective_request.samples",
-        minimum=1,
-    ) != population:
+    if (
+        _integer(
+            effective_request.get("samples"),
+            "data.draws.provenance.effective_request.samples",
+            minimum=1,
+        )
+        != population
+    ):
         raise VisualizationError("effective request samples must equal data.draws.population")
-    raw_input_order = _list(
-        provenance.get("input_order"), "data.draws.provenance.input_order"
-    )
+    raw_input_order = _list(provenance.get("input_order"), "data.draws.provenance.input_order")
     if any(not isinstance(name, str) or not name for name in raw_input_order):
         raise VisualizationError("data.draws.provenance.input_order must contain names")
     input_order = tuple(raw_input_order)
-    if len(set(input_order)) != len(input_order) or input_order != tuple(declared_variables):
+    if len(set(input_order)) != len(input_order) or set(input_order) != set(declared_variables):
         raise VisualizationError(
             "data.draws.provenance.input_order must list every declared input once"
         )
@@ -232,6 +251,56 @@ def _draws(value: object, summary: Summary) -> Draws:
         effective_request,
         input_order,
     )
+
+
+def _thresholds(value: object, summary: Summary, draws: Draws | None) -> dict[str, Threshold]:
+    raw = _mapping(value, "data.thresholds")
+    if set(raw) != {"schema_version", "events"}:
+        raise VisualizationError("data.thresholds requires only schema_version and events")
+    if _integer(raw["schema_version"], "data.thresholds.schema_version") != 1:
+        raise VisualizationError("data.thresholds.schema_version must be 1")
+    events = _mapping(raw["events"], "data.thresholds.events")
+    if not 1 <= len(events) <= 16:
+        raise VisualizationError("data.thresholds.events requires 1 to 16 comparisons")
+    result = {}
+    for name, item in events.items():
+        path = f"data.thresholds.events.{name}"
+        if not isinstance(name, str) or not name.strip() or len(name) > 64:
+            raise VisualizationError("thresholds identifiers must have 1 to 64 characters")
+        event = _mapping(item, path)
+        if set(event) != {"operator", "value", "matched", "total"}:
+            raise VisualizationError(f"{path} requires operator, value, matched, and total")
+        comparison = event["operator"]
+        if not isinstance(comparison, str) or comparison not in {"lt", "le", "gt", "ge"}:
+            raise VisualizationError(f"{path}.operator must be lt, le, gt, or ge")
+        threshold = Threshold(
+            comparison,
+            _number(event["value"], f"{path}.value"),
+            _integer(event["matched"], f"{path}.matched", minimum=0),
+            _integer(event["total"], f"{path}.total", minimum=1),
+        )
+        if threshold.total != summary.count or threshold.matched > threshold.total:
+            raise VisualizationError(f"{path} has inconsistent counts")
+        endpoints = [threshold.matches(summary.minimum), threshold.matches(summary.maximum)]
+        if (all(endpoints) and threshold.matched != threshold.total) or (
+            not any(endpoints) and threshold.matched != 0
+        ):
+            raise VisualizationError(f"{path} counts contradict the full-run extrema")
+        if draws is not None:
+            retained_matches = sum(threshold.matches(outcome) for outcome in draws.outcomes)
+            omitted = draws.population - draws.returned
+            if not retained_matches <= threshold.matched <= retained_matches + omitted:
+                raise VisualizationError(f"{path} counts contradict retained outcomes")
+            definitions = _mapping(
+                draws.effective_request.get("thresholds"), "effective_request.thresholds"
+            )
+            expected = {"operator": comparison, "value": threshold.value}
+            definition = _mapping(definitions.get(name), f"effective_request.thresholds.{name}")
+            _number(definition.get("value"), f"effective_request.thresholds.{name}.value")
+            if definition != expected:
+                raise VisualizationError(f"{path} contradicts effective_request.thresholds")
+        result[name] = threshold
+    return result
 
 
 def parse_result_bytes(source: bytes, *, require_draws: bool = False) -> PearlResult:
@@ -271,4 +340,5 @@ def parse_result_bytes(source: bytes, *, require_draws: bool = False) -> PearlRe
         draws=draws,
         metadata=metadata,
         source_sha256=hashlib.sha256(source).hexdigest(),
+        thresholds=_thresholds(data["thresholds"], summary, draws) if "thresholds" in data else {},
     )

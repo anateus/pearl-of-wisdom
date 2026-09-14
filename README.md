@@ -82,9 +82,20 @@ result = MonteCarloEngine().analyze(
 
 ## Optional visualization
 
-The separate [`pearl-of-wisdom-viz`](visualization) package renders Monte Carlo empirical cumulative distributions and two-to-eight-scenario interval comparisons. Pearl core still has no runtime dependencies.
+The separate [`pearl-of-wisdom-viz`](visualization) package turns Monte Carlo results into question-led reports for general readers, empirical cumulative distributions, and scenario interval comparisons. Pearl core still has no runtime dependencies.
 
 Distribution rendering requires `return_draws: true`. Draw exports are capped at 10,000 aligned rows and 16 selected input columns, while every existing summary continues to use the complete run. Bokeh HTML is portable and offline by default; shared local resources, CDN resources, and optional Matplotlib PNG output are explicit choices.
+
+An explanatory report starts with a question and conditional answer, then shows the outcome range, model arithmetic, assumptions, and limitations. Named threshold counts use every simulation, including outcomes omitted from a capped export. The report binds authored context to saved results with hashes; the author still owns the validity of the assumptions and units.
+
+Try the synthetic project-deadline example from this checkout:
+
+```bash
+uv run --project visualization --with-editable . python visualization/examples/generate.py \
+  --out-dir reports/project
+```
+
+Open `reports/project/project-deadline.html` and compare current scope with 20% less work. See the [worked examples](visualization/examples/README.md) for a budget question using the same renderer.
 
 See the [visualization companion guide](visualization/README.md) for installation, commands, resource ownership, and artifact lifecycle details.
 
@@ -218,11 +229,11 @@ Hindsight is optional. If it is present, the skills may use it for continuity. R
 The plugin uses a one-time installation of its Python CLI. From this checkout:
 
 ```bash
-uv tool install --reinstall ./plugins/pearl-of-wisdom/cli/pearl_of_wisdom-0.3.0-py3-none-any.whl
+uv tool install --reinstall ./plugins/pearl-of-wisdom/cli/pearl_of_wisdom-0.4.0-py3-none-any.whl
 python3 ./plugins/pearl-of-wisdom/scripts/check_cli.py
 ```
 
-The [compatibility check](plugins/pearl-of-wisdom/scripts/check_cli.py) accepts CLI versions `>=0.3.0,<0.4.0` and returns the installed executable's absolute path. Missing, older, newer-minor, and unrecognized versions stop the workflow with an exact install command for this plugin's wheel. The check reads the required version from the plugin manifest; later stable patches in the same minor release are compatible.
+The [compatibility check](plugins/pearl-of-wisdom/scripts/check_cli.py) accepts CLI versions `>=0.4.0,<0.5.0` and returns the installed executable's absolute path. Missing, older, newer-minor, and unrecognized versions stop the workflow with an exact install command for this plugin's wheel. The check reads the required version from the plugin manifest; later stable patches in the same minor release are compatible.
 
 Both host skills run the installed executable directly after this check. Normal use needs Python and access to the investigation database, without writable uv caches or tool directories. `uv` is needed for installation and updates. If the host requires approval to write its tool directories, approve that install command or run it in a terminal, then rerun the check. Installation does not change later commands' sandbox permissions. Python 3 must be available as `python3` for the plugin check and hook.
 

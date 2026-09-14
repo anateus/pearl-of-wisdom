@@ -6,6 +6,7 @@ import math
 import platform
 import random
 import statistics
+from bisect import bisect_left, bisect_right
 from collections.abc import Callable, Mapping
 
 from .. import __version__
@@ -20,6 +21,7 @@ from .base import (
 MAX_SAMPLES = 1_000_000
 MAX_DRAW_LIMIT = 10_000
 MAX_DRAW_VARIABLES = 16
+MAX_THRESHOLDS = 16
 MAX_EXPORT_RESPONSE_BYTES = 16 * 1024 * 1024
 REQUEST_FIELDS = {
     "draw_limit",
@@ -29,6 +31,7 @@ REQUEST_FIELDS = {
     "return_draws",
     "samples",
     "seed",
+    "thresholds",
     "variables",
 }
 DISTRIBUTION_FIELDS = {
@@ -56,9 +59,13 @@ def _require_mapping(value: object, *, label: str) -> Mapping[str, object]:
 def _require_number(value: object, *, label: str) -> float:
     if isinstance(value, bool) or not isinstance(value, int | float):
         raise MonteCarloValidationError(f"{label} must be numeric")
-    if not math.isfinite(value):
+    try:
+        result = float(value)
+    except OverflowError as error:
+        raise MonteCarloValidationError(f"{label} must be finite") from error
+    if not math.isfinite(result):
         raise MonteCarloValidationError(f"{label} must be finite")
-    return float(value)
+    return result
 
 
 def _require_probability(value: object, *, label: str) -> float:
@@ -82,7 +89,7 @@ def _quantile(values: list[float], probability: float) -> float:
     index = probability * (len(values) - 1)
     lower = math.floor(index)
     upper = math.ceil(index)
-    if lower == upper:
+    if lower == upper or values[lower] == values[upper]:
         return values[lower]
     weight = index - lower
     return values[lower] * (1 - weight) + values[upper] * weight
@@ -113,6 +120,9 @@ class MonteCarloEngine:
         if isinstance(seed_raw, bool) or not isinstance(seed_raw, int):
             raise MonteCarloValidationError("seed must be an integer")
         samples = _require_samples(request_map.get("samples"))
+        thresholds = (
+            self._thresholds(request_map["thresholds"]) if "thresholds" in request_map else None
+        )
         compiled = self._compile_expression(expression_raw)
         quantiles = self._quantiles(quantiles_raw)
         draw_limit, draw_variables = self._draw_export_controls(
@@ -158,6 +168,14 @@ class MonteCarloEngine:
                 for probability in quantiles
             },
         }
+        if thresholds is not None:
+            events = {}
+            for name, comparison in thresholds.items():
+                operator, value = comparison["operator"], comparison["value"]
+                left, right = bisect_left(outcomes, value), bisect_right(outcomes, value)
+                matched = {"lt": left, "le": right, "gt": samples - right, "ge": samples - left}
+                events[name] = {**comparison, "matched": matched[operator], "total": samples}
+            data["thresholds"] = {"schema_version": 1, "events": events}
         if draw_limit is not None:
             assert selected_indices is not None
             assert retained_outcomes is not None
@@ -167,9 +185,7 @@ class MonteCarloEngine:
                 "schema_version": 1,
                 "population": samples,
                 "returned": returned,
-                "selection": (
-                    "all" if returned == samples else "uniform_without_replacement_v1"
-                ),
+                "selection": ("all" if returned == samples else "uniform_without_replacement_v1"),
                 "indices": selected_indices,
                 "outcome": retained_outcomes,
                 "inputs": retained_inputs,
@@ -182,6 +198,7 @@ class MonteCarloEngine:
                         "samples": samples,
                         "seed": seed_raw,
                         "quantiles": quantiles,
+                        **({"thresholds": thresholds} if thresholds is not None else {}),
                     },
                     "input_order": list(variables),
                 },
@@ -214,6 +231,34 @@ class MonteCarloEngine:
             return compile_numeric_expression(expression if isinstance(expression, str) else "")
         except ValueError as error:
             raise MonteCarloValidationError(str(error)) from error
+
+    @staticmethod
+    def _thresholds(value: object) -> dict[str, dict[str, object]]:
+        mapping = _require_mapping(value, label="thresholds")
+        if not 1 <= len(mapping) <= MAX_THRESHOLDS:
+            raise MonteCarloValidationError("thresholds must contain between 1 and 16 comparisons")
+        result = {}
+        for name, raw in mapping.items():
+            if not isinstance(name, str) or not name.strip() or len(name) > 64:
+                raise MonteCarloValidationError(
+                    "thresholds identifiers must have 1 to 64 characters"
+                )
+            path = f"thresholds.{name}"
+            comparison = _require_mapping(raw, label=path)
+            require_only_fields(
+                comparison,
+                {"operator", "value"},
+                label=path,
+                error_type=MonteCarloValidationError,
+            )
+            operator = comparison.get("operator")
+            if not isinstance(operator, str) or operator not in {"lt", "le", "gt", "ge"}:
+                raise MonteCarloValidationError(f"{path}.operator must be lt, le, gt, or ge")
+            result[name] = {
+                "operator": operator,
+                "value": _require_number(comparison.get("value"), label=f"{path}.value"),
+            }
+        return result
 
     def _draw_export_controls(
         self,

@@ -1,0 +1,97 @@
+:root { --paper:#f7f5ef; --ink:#17212b; --muted:#53606c; --rule:#cbd2d8; --accent:#2257a6; --selection:#c9daf4; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font-family:"Avenir Next",Avenir,"Segoe UI",sans-serif; font-size:16px; line-height:1.6; }
+main { width:min(1056px,calc(100% - 64px)); margin:0 auto; padding:36px 0 32px; }
+h1,h2,h3 { font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.18; }
+h1 { max-width:23ch; font-size:clamp(2rem,3.4vw,3.1rem); font-weight:600; letter-spacing:-.025em; margin:0 0 18px; text-wrap:balance; }
+h2 { font-size:1.55rem; font-weight:600; margin:0 0 16px; }
+h3 { font-size:1.15rem; margin:24px 0 12px; }
+p { max-width:73ch; margin:12px 0; overflow-wrap:anywhere; }
+header { padding-bottom:18px; }
+.illustrative { color:var(--muted); margin:0; }
+fieldset { border:0; padding:0; margin:4px 0 18px; }
+legend { font-size:.9rem; color:var(--muted); padding:0 0 8px; }
+.scenario-options { display:flex; flex-wrap:wrap; gap:10px 24px; }
+.scenario-options label { display:flex; align-items:center; gap:9px; cursor:pointer; padding:7px 0; }
+input { accent-color:var(--accent); width:18px; height:18px; margin:0; flex-shrink:0; }
+label:has(input:checked) { color:var(--accent); font-weight:600; }
+:focus-visible { outline:3px solid var(--accent); outline-offset:5px; }
+.scenario-answer { border-top:1px solid var(--rule); padding-top:18px; margin-bottom:18px; }
+.scenario-answer h2 { font-size:1.15rem; color:var(--muted); }
+.answer { font-size:clamp(1.25rem,2.1vw,1.75rem); line-height:1.4; max-width:57ch; margin-top:12px; }
+.answer span { color:var(--muted); }
+.exact-count { font-size:.95rem; }
+.exact-count strong { font-variant-numeric:tabular-nums; }
+.change-explanation,.comparison-note { color:var(--muted); font-size:.95rem; }
+.interval-summary { display:flex; flex-wrap:wrap; gap:20px 70px; margin:26px 0 12px; }
+.interval-summary dt { color:var(--muted); font-size:.88rem; }
+.interval-summary dd { margin:6px 0 0; font-size:1.3rem; font-variant-numeric:tabular-nums; }
+.interval-summary dd span { font-size:.95rem; }
+.interval-explanation { color:var(--muted); font-size:.9rem; }
+.chart-section { padding:26px 0 16px; border-block:1px solid var(--rule); }
+.chart-section h2 { margin-bottom:10px; }
+.chart-key { display:flex; flex-wrap:wrap; gap:8px 22px; color:var(--muted); font-size:.85rem; margin:12px 0 8px; }
+.chart-section>p:last-child { font-size:.88rem; color:var(--muted); }
+.model-section { margin-top:44px; }
+.model-map { display:grid; grid-template-columns:minmax(0,1fr) 64px minmax(0,1.15fr); align-items:center; gap:24px; margin:28px 0 12px; padding:24px 0; border-block:1px solid var(--rule); }
+.model-map ul { list-style:none; margin:0; padding:0; }
+.model-map li { padding:9px 0; font-weight:600; }
+.model-map li span { display:block; color:var(--muted); font-weight:400; font-size:.82rem; }
+.model-arrow { width:64px; color:var(--muted); }
+.formula code { font-size:.95rem; }
+.formula p { font-size:.88rem; }
+.model-scenario { color:var(--muted); margin:0 0 8px; }
+.model-caption { color:var(--muted); font-size:.85rem; }
+.model-section>h2:not(:first-child) { margin-top:42px; }
+table { border-collapse:collapse; width:100%; font-size:.94rem; table-layout:fixed; }
+th,td { text-align:left; vertical-align:top; padding:16px 16px 16px 0; border-bottom:1px solid var(--rule); overflow-wrap:anywhere; }
+thead th { font-size:.8rem; color:var(--muted); font-weight:500; }
+th:first-child { width:23%; }
+th:last-child { width:29%; }
+tbody th { font-weight:600; }
+tbody th code { display:block; font-size:.78rem; color:var(--muted); margin-top:5px; }
+td p { margin:0 0 8px; }
+.distribution { font-size:.86rem; color:var(--muted); }
+.distribution span { display:block; }
+.evidence-status { font-size:.83rem; font-weight:600; }
+.evidence-status+p,.evidence-reference { font-size:.85rem; color:var(--muted); margin-top:6px; }
+.limitations { margin:44px 0 34px; }
+.limitations ul { max-width:73ch; padding-left:20px; }
+.limitations li { padding:5px 0; }
+.limitations>p { color:var(--muted); }
+details { margin:18px 0; }
+summary { cursor:pointer; padding:12px 0; font-weight:600; text-underline-offset:4px; }
+summary:hover { color:var(--accent); }
+.audit { border-block:1px solid var(--rule); padding:8px 0; }
+.audit>summary { font-size:1.02rem; }
+.audit>section { padding:12px 0 24px; border-bottom:1px solid var(--rule); }
+.audit p { font-size:.88rem; }
+.audit-values { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px; font-size:.85rem; }
+.audit-values dt { color:var(--muted); }
+.audit-values dd { margin:5px 0; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+code,pre { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; overflow-wrap:anywhere; }
+code { font-size:.86em; }
+pre { white-space:pre-wrap; font-size:.8rem; padding:16px; background:#ffffff; }
+footer { padding-top:18px; color:var(--muted); font-size:.8rem; }
+.enhanced [data-scenario]:not(.is-active) { display:none; }
+[hidden] { display:none !important; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+::selection { color:var(--ink); background:var(--selection); }
+@media(max-width:640px) {
+  main { width:calc(100% - 32px); padding-top:26px; }
+  h1 { font-size:2rem; }
+  header { padding-bottom:20px; }
+  .interval-summary { gap:16px; flex-direction:column; }
+  .answer { font-size:1.25rem; }
+  .model-map { grid-template-columns:1fr; gap:10px; }
+  .model-arrow { transform:rotate(90deg); margin:8px auto; }
+  .model-map ul { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .formula { padding-top:6px; }
+  table,tbody,tr,th,td { display:block; width:100% !important; }
+  thead { display:none; }
+  tbody tr { padding:14px 0; border-bottom:1px solid var(--rule); }
+  th,td { padding:6px 0; border:0; }
+  td:last-child { padding-top:12px; }
+  .audit-values { grid-template-columns:1fr 1fr; }
+  .scenario-options { gap:4px 18px; }
+}

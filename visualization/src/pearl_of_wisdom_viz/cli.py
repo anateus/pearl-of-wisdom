@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
+from .explain_render import render_explanation
+from .explanation import load_explanation
 from .model import MAX_INPUT_BYTES, VisualizationError, parse_result_bytes
 from .render import RenderedArtifact, render_distribution, render_forest
 
@@ -36,6 +38,12 @@ def _parser() -> JsonArgumentParser:
     forest = commands.add_parser("forest", help="compare full-run scenario intervals")
     forest.add_argument("--input", type=Path, action="append", default=[])
     forest.add_argument("--label", action="append", default=[])
+    explain = commands.add_parser("explain", help="explain a model and its saved scenario results")
+    explain.add_argument("--context", type=Path, required=True)
+    explain.add_argument("--out", type=Path, required=True)
+    explain.add_argument("--resources", choices=("inline", "shared", "cdn"))
+    explain.add_argument("--overwrite", action="store_true")
+    explain.set_defaults(backend="bokeh")
     for command in (dist, forest):
         command.add_argument("--quantity", required=True)
         command.add_argument("--unit", required=True)
@@ -171,7 +179,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         arguments = _parser().parse_args(argv)
         resources = _resource_mode(arguments)
         destination = _validate_output(arguments.out, arguments.backend)
-        if arguments.command == "dist":
+        report = None
+        if arguments.command == "explain":
+            report = load_explanation(arguments.context)
+            sources = tuple(scenario.source for scenario in report.scenarios)
+            artifact = render_explanation(report, resources=resources)
+        elif arguments.command == "dist":
             sources = (_read_source(arguments.input),)
             result = parse_result_bytes(sources[0], require_draws=True)
             artifact = render_distribution(
@@ -200,6 +213,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         _publish(destination, artifact.content, overwrite=arguments.overwrite)
         descriptor = _descriptor(destination, artifact, sources)
+        if report is not None:
+            descriptor["context_sha256"] = report.context_sha256
     except CliUsageError as error:
         return _error("invalid_arguments", str(error))
     except VisualizationError as error:
