@@ -13,6 +13,7 @@ from typing import Any
 from . import __version__
 from .engines import ENGINE_FACTORIES, AnalysisEngine
 from .investigation import InvestigationStatus, JsonValue
+from .json_transport import dumps_json
 from .store import InvestigationNotFoundError, InvestigationStore
 
 
@@ -97,7 +98,7 @@ def _example(engine_name: str) -> dict[str, JsonValue]:
 def _emit(value: Any, *, stream: Any | None = None) -> None:
     if stream is None:
         stream = sys.stdout
-    print(json.dumps(value, allow_nan=False, separators=(",", ":"), sort_keys=True), file=stream)
+    print(dumps_json(value), file=stream)
 
 
 def _error(code: str, message: str) -> int:

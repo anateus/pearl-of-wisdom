@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-14T21:01:14Z",
+  "title": "Design System: Pearl Visualization",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "#f7f5ef"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Dark Ink",
+        "canonical": "#17212b"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Working Gray",
+        "canonical": "#53606c"
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Quiet Rule",
+        "canonical": "#cbd2d8"
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Audit Cobalt",
+        "canonical": "#2257a6"
+      },
+      "selection": {
+        "role": "primary",
+        "displayName": "Selection Blue",
+        "canonical": "#c9daf4"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Artifact Title",
+        "purpose": "Names the computation at the top of the audit sheet."
+      },
+      "title": {
+        "displayName": "Section Title",
+        "purpose": "Introduces compact evidence sections such as Full-run summary and Caveats."
+      },
+      "body": {
+        "displayName": "Working Text",
+        "purpose": "Carries notes, lists, table values, and supporting explanation."
+      },
+      "data-compact": {
+        "displayName": "Compact Data",
+        "purpose": "Carries summary values after the narrow-screen table reflow."
+      },
+      "code": {
+        "displayName": "Source Detail",
+        "purpose": "Identifies draw-selection methods and source hashes."
+      }
+    },
+    "breakpoints": [
+      {
+        "name": "narrow-records",
+        "value": "640px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Artifact Header",
+      "kind": "custom",
+      "refersTo": "artifact-header",
+      "description": "A compact computation title followed by the quantity and unit.",
+      "html": "<header class=\"ds-artifact-header\"><h1>Empirical cumulative distribution of duration</h1><p>duration · ms</p></header>",
+      "css": ".ds-artifact-header { background: var(--paper); color: var(--ink); font-family: \"Avenir Next\", Avenir, \"Segoe UI\", sans-serif; line-height: 1.5; } .ds-artifact-header h1 { margin: 0 0 8px; font-family: \"Iowan Old Style\", \"Palatino Linotype\", Palatino, Georgia, serif; font-size: 1.85rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.15; } .ds-artifact-header p { max-width: 72ch; margin: 0 0 28px; color: var(--muted); }"
+    },
+    {
+      "name": "Plot Frame",
+      "kind": "custom",
+      "refersTo": "plot-frame",
+      "description": "The ruled, width-dominant frame that contains an interactive Bokeh chart.",
+      "html": "<section class=\"ds-plot-frame\" aria-label=\"Scenario intervals for latency\"></section>",
+      "css": ".ds-plot-frame { min-height: 460px; padding: 20px 0; border-block: 1px solid var(--rule); background: var(--paper); color: var(--ink); } @media (max-width: 640px) { .ds-plot-frame { min-height: 390px; } }"
+    },
+    {
+      "name": "Full-run Summary Table",
+      "kind": "custom",
+      "refersTo": "summary-table",
+      "description": "An exact numerical summary that becomes self-labeled vertical records on narrow screens.",
+      "html": "<div class=\"ds-table-scroll\" tabindex=\"0\"><table class=\"ds-summary-table\"><thead><tr><th>Scenario</th><th>Count</th><th>Mean</th><th>Seed</th></tr></thead><tbody><tr><th scope=\"row\">baseline</th><td data-label=\"Count\">4000</td><td data-label=\"Mean\">59.7849238603</td><td data-label=\"Seed\">7</td></tr></tbody></table></div>",
+      "css": ".ds-table-scroll { max-width: 100%; overflow-x: auto; } .ds-summary-table { width: 100%; border-collapse: collapse; color: var(--ink); font-family: \"Avenir Next\", Avenir, \"Segoe UI\", sans-serif; font-variant-numeric: tabular-nums; line-height: 1.5; } .ds-summary-table th, .ds-summary-table td { padding: 9px 10px; border-bottom: 1px solid var(--rule); text-align: right; } .ds-summary-table th:first-child { text-align: left; } @media (max-width: 640px) { .ds-summary-table, .ds-summary-table thead, .ds-summary-table tbody, .ds-summary-table tr, .ds-summary-table th, .ds-summary-table td { display: block; width: 100%; } .ds-summary-table thead { display: none; } .ds-summary-table tr { padding: 8px 0; border-block: 1px solid var(--rule); } .ds-summary-table th, .ds-summary-table td { padding: 5px 4px; border: 0; text-align: left; } .ds-summary-table th[scope=\"row\"] { padding-bottom: 7px; font-size: 1rem; } .ds-summary-table td { display: grid; grid-template-columns: minmax(116px, 40%) 1fr; gap: 12px; font-size: 0.88rem; } .ds-summary-table td::before { content: attr(data-label); color: var(--muted); font-weight: 600; } }"
+    },
+    {
+      "name": "Draw Coverage Note",
+      "kind": "custom",
+      "refersTo": "draw-coverage-note",
+      "description": "A muted statement of retained draws, population draws, and selection method.",
+      "html": "<p class=\"ds-draw-coverage-note\">Retained 4000 of 4000 draws using <code>all</code>.</p>",
+      "css": ".ds-draw-coverage-note { max-width: 72ch; color: var(--muted); font-family: \"Avenir Next\", Avenir, \"Segoe UI\", sans-serif; line-height: 1.5; } .ds-draw-coverage-note code { font-family: ui-monospace, SFMono-Regular, monospace; }"
+    },
+    {
+      "name": "Provenance List",
+      "kind": "custom",
+      "refersTo": "provenance-list",
+      "description": "A visible record of runtime versions and the source SHA-256 for each result.",
+      "html": "<ul class=\"ds-provenance-list\"><li>Result: Pearl 0.3.0, Python 3.12.13; source SHA-256 <code>7c484ba56e1c0b32a5024530873196b8eb346c583f4b79ae0069bcc146c744bb</code></li></ul>",
+      "css": ".ds-provenance-list { color: var(--ink); font-family: \"Avenir Next\", Avenir, \"Segoe UI\", sans-serif; line-height: 1.5; } .ds-provenance-list code { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, monospace; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Statistical Audit Sheet",
+    "overview": "Each visualization reads as the audit sheet for one computation. Warm paper, dark ink, thin rules, and a single cobalt data color give the chart enough visual authority without competing with the numerical result.\n\nThe document shell stays editorial and restrained. It puts the quantity and unit first, gives most of the width to the chart, then keeps full-run summaries, retained-draw coverage, provenance, resource requirements, and calibration limits in the same reading path.",
+    "keyCharacteristics": [
+      "Warm paper and dark ink establish a quiet reading surface.",
+      "Cobalt identifies data and focus without encoding rank.",
+      "Serif headings separate interpretation from working detail.",
+      "Tabular numbers and thin rules keep summaries easy to compare.",
+      "Responsive records preserve every label and value without horizontal clipping."
+    ],
+    "rules": [],
+    "dos": [
+      "**Do** keep the quantity and unit immediately above a width-dominant chart.",
+      "**Do** keep full-run statistics, retained-draw coverage, provenance, resource requirements, and calibration limits visible around the chart.",
+      "**Do** use cobalt for statistical marks and keyboard focus, with tabular figures for comparable numbers.",
+      "**Do** reflow summary rows into labeled records at the 640px threshold.",
+      "**Do** preserve raw source values in hover details and recognizable Bokeh controls."
+    ],
+    "donts": [
+      "**Don't** use color to imply scenario rank or create decorative categories.",
+      "**Don't** add shadows, gradients, paper texture, ornamental composition, or an oversized numeral to the audit sheet.",
+      "**Don't** hide source hashes, subset limits, resource requirements, or calibration caveats behind interaction.",
+      "**Don't** depend on horizontal clipping to expose a summary value on narrow screens.",
+      "**Don't** reuse the plot's statistical marks as decorative interface motifs."
+    ]
+  }
+}

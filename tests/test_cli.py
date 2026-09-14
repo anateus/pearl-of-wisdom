@@ -4,13 +4,14 @@ from pathlib import Path
 import pytest
 
 from pearl_of_wisdom.cli import ENGINE_FACTORIES, main
+from pearl_of_wisdom.engines import monte_carlo as monte_carlo_module
 
 
 def test_cli_version_does_not_open_database(tmp_path: Path, capsys) -> None:
     database = tmp_path / "missing" / "pearl.sqlite3"
     assert main(["--db", str(database), "--version"]) == 0
     captured = capsys.readouterr()
-    assert captured.out == "pearl-of-wisdom 0.2.0\n"
+    assert captured.out == "pearl-of-wisdom 0.3.0\n"
     assert captured.err == ""
     assert not database.exists()
 
@@ -242,3 +243,21 @@ def test_cli_help_points_to_runnable_engine_examples(capsys) -> None:
 
     assert "--example" in help_text
     assert "runnable request" in help_text
+
+
+def test_cli_reports_oversized_draw_export_through_validation_path(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(monte_carlo_module, "MAX_EXPORT_RESPONSE_BYTES", 128)
+    request = {
+        "variables": {"x": {"distribution": "constant", "value": 1}},
+        "expression": "x",
+        "samples": 1,
+        "return_draws": True,
+    }
+
+    assert main(["analyze", "--engine", "monte-carlo", "--data", json.dumps(request)]) == 1
+    captured = capsys.readouterr()
+
+    assert captured.out == ""
+    error = json.loads(captured.err)["error"]
+    assert error["code"] == "validation_error"
+    assert "JSON response limit" in error["message"]

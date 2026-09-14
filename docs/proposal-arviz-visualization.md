@@ -1,6 +1,8 @@
-# Proposal: interactive visualization of Pearl models with ArviZ
+# Interactive visualization of Pearl models with ArviZ
 
-Status: draft specification, not scheduled for implementation. Refined 2026-09-12 against Pearl 0.2.0 (`1ed31d4`). Monte Carlo-first scope and inline HTML defaults were confirmed during review. Simulation has a [separate follow-on specification](proposal-simulation-visualization.md).
+Status: implemented 2026-09-14 in Pearl 0.3.0 and `pearl-of-wisdom-viz` 0.1.0. Refined 2026-09-12 against Pearl 0.2.0 (`1ed31d4`). Monte Carlo-first scope and inline HTML defaults were confirmed during review. Simulation has a [separate follow-on specification](proposal-simulation-visualization.md).
+
+Implementation lives in the core [Monte Carlo engine](../src/pearl_of_wisdom/engines/monte_carlo.py) and the separate [visualization package](../visualization). The companion uses ArviZ's neutral `predictions` group and `sample` dimension for distribution input, then supplies exact empirical steps and full-run forest statistics to Bokeh or Matplotlib. Visualization dependencies do not enter Pearl core or the bundled plugin wheel.
 
 ## Purpose and scope
 
@@ -8,7 +10,7 @@ Add optional plots when a distribution's shape or a comparison between scenarios
 
 Plots accompany the numerical result and its assumptions. They don't establish that an input distribution is calibrated. Most answers should still be a number or range with the assumptions that drive it. Automatic plotting in the agent plugin stays outside this release; users or agents can invoke the companion explicitly when someone will use the artifact.
 
-Bokeh HTML is the default output. Matplotlib PNG is an explicit alternative for image-only workflows. HTML uses inline resources by default, with CDN and shared local resources available by choice. Shared resources implement the proposed local library directory without an HTTP server.
+Bokeh HTML is the default output. Matplotlib PNG is an explicit alternative for image-only workflows. HTML uses inline resources by default, with CDN and shared local resources available by choice. Shared resources use the local library directory without an HTTP server.
 
 ## What clarification and pressure-testing changed
 
@@ -55,13 +57,13 @@ For a capped export, select indices uniformly without replacement using a determ
 
 The existing count, moments, extrema, quantiles, and metadata remain identical with export on or off. They use all requested samples. Capture only selected inputs during the existing run; additional retained state scales with `returned` and selected columns, not all sample-input combinations. Core writes no sidecar files and does not rerun the analysis for export.
 
-Reject an export if its complete UTF-8 JSON response, using the CLI's serialization, exceeds 16 MiB, including provenance. Do not silently reduce the requested rows or columns to fit. This is a proposed format limit, not a measured performance target. The default request path gains no export allocation.
+Reject an export if its complete UTF-8 JSON response, using the CLI's serialization, exceeds 16 MiB, including provenance. Do not silently reduce the requested rows or columns to fit. This is a format limit, not a measured performance target. The default request path gains no export allocation.
 
 ## Companion CLI and plots
 
 `pearl-of-wisdom-viz` reads strict JSON from stdin or local files and writes one artifact. It doesn't query SQLite, run an engine, infer units, fetch a source URL, or interpret input strings as executable code. The accepted result name is `monte_carlo`, matching the engine's output. The CLI uses `monte-carlo`.
 
-The proposed first command is:
+The first command is:
 
 ```bash
 pearl-of-wisdom analyze --engine monte-carlo --data \
@@ -117,7 +119,7 @@ ArviZ 1.x is a metapackage over its data, statistics, and plotting packages. Its
 
 Use ArviZ's distribution and forest interfaces with explicit statistics and Bokeh interactions. Forest accepts precomputed statistics, so full-run Pearl quantiles can remain authoritative. A dependency lock must cover the resolved ArviZ components and backends; pinning only the metapackage doesn't fix transitive versions. The base companion installs its HTML dependencies; a companion `matplotlib` extra provides PNG. None enter Pearl core or the bundled plugin wheel. [Distribution API](https://python.arviz.org/projects/plots/en/stable/api/generated/arviz_plots.plot_dist.html) and [forest API](https://python.arviz.org/projects/plots/en/stable/api/generated/arviz_plots.plot_forest.html).
 
-Direct Bokeh is the strongest alternative for this narrow scope: ECDFs and summary intervals don't inherently need ArviZ. It would reduce dependencies but require maintaining plotting and PNG behavior separately. This specification retains ArviZ as the proposed adapter; direct backend calls may supply exact curves, summaries, and interactions where ArviZ defaults don't meet the contract. Plot semantics must remain independent of that implementation choice.
+Direct Bokeh is the strongest alternative for this narrow scope: ECDFs and summary intervals don't inherently need ArviZ. It would reduce dependencies but require maintaining plotting and PNG behavior separately. This implementation retains ArviZ as the adapter; direct backend calls supply exact curves, summaries, and interactions where ArviZ defaults don't meet the contract. Plot semantics remain independent of that implementation choice.
 
 An optional extra on Pearl core could also preserve a dependency-free default install. The separate package is preferred because the visualization release and dependency lifecycle can evolve independently of the plugin's wheel and compatibility checks. A local HTTP asset server adds availability and lifecycle work that static shared files avoid. Bokeh already supports external resource paths. [Bokeh resources](https://docs.bokeh.org/en/latest/docs/reference/resources.html).
 
@@ -139,7 +141,7 @@ KDE, histograms, ridge plots, pair plots, prior/posterior comparisons, MCMC diag
 
 ## Feasibility evidence and limits
 
-Synthetic probes on 2026-09-12 resolved `arviz` 1.3.0, `arviz-base` 1.3.0, `arviz-plots` 1.3.1, `arviz-stats` 1.3.2, Bokeh 3.10.0, and Matplotlib 3.11.2. Explicit `predictions`/`sample` data rendered for continuous, discrete, constant, and single-value ECDFs. A forest probe placed independently supplied endpoints and median into the actual Bokeh glyph data. Matplotlib wrote a PNG. These establish adapter feasibility, not the proposed CLI or export implementation.
+Synthetic probes on 2026-09-12 resolved `arviz` 1.3.0, `arviz-base` 1.3.0, `arviz-plots` 1.3.1, `arviz-stats` 1.3.2, Bokeh 3.10.0, and Matplotlib 3.11.2. Explicit `predictions`/`sample` data rendered for continuous, discrete, constant, and single-value ECDFs. A forest probe placed independently supplied endpoints and median into the actual Bokeh glyph data. Matplotlib wrote a PNG. The implementation test suite now covers the CLI, export contract, both renderers, resource modes, and browser interactions.
 
 The installed defaults were an 89% equal-tail interval and a mean point estimate. The distribution models had pan/zoom/reset tools but no hover tool. A forest call with one `ci_probs` entry failed; a controlled follow-up showed that two entries work with both equal and unequal sample counts. Unequal counts also emitted an xarray alignment warning, reinforcing the requirement to avoid relying on implicit concatenation behavior.
 

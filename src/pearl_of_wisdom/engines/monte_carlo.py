@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import math
+import platform
 import random
 import statistics
 from collections.abc import Callable, Mapping
 
+from .. import __version__
+from ..json_transport import json_line_size
 from .base import (
     AnalysisResult,
     compile_numeric_expression,
@@ -15,7 +18,19 @@ from .base import (
 )
 
 MAX_SAMPLES = 1_000_000
-REQUEST_FIELDS = {"expression", "quantiles", "samples", "seed", "variables"}
+MAX_DRAW_LIMIT = 10_000
+MAX_DRAW_VARIABLES = 16
+MAX_EXPORT_RESPONSE_BYTES = 16 * 1024 * 1024
+REQUEST_FIELDS = {
+    "draw_limit",
+    "draw_variables",
+    "expression",
+    "quantiles",
+    "return_draws",
+    "samples",
+    "seed",
+    "variables",
+}
 DISTRIBUTION_FIELDS = {
     "bernoulli": {"distribution", "probability"},
     "constant": {"distribution", "value"},
@@ -90,7 +105,8 @@ class MonteCarloEngine:
             label="request",
             error_type=MonteCarloValidationError,
         )
-        variables = self._variables(request_map.get("variables"))
+        variables_raw = _require_mapping(request_map.get("variables"), label="variables")
+        variables = self._variables(variables_raw)
         expression_raw = request_map.get("expression")
         quantiles_raw = request_map.get("quantiles", [0.05, 0.5, 0.95])
         seed_raw = request_map.get("seed", 0)
@@ -99,35 +115,89 @@ class MonteCarloEngine:
         samples = _require_samples(request_map.get("samples"))
         compiled = self._compile_expression(expression_raw)
         quantiles = self._quantiles(quantiles_raw)
+        draw_limit, draw_variables = self._draw_export_controls(
+            request_map,
+            variable_names=tuple(variables),
+        )
+        selected_indices = (
+            self._selected_indices(samples=samples, draw_limit=draw_limit, seed=seed_raw)
+            if draw_limit is not None
+            else None
+        )
+        selected_index_set = set(selected_indices) if selected_indices is not None else None
+        retained_outcomes = [] if selected_indices is not None else None
+        retained_inputs = (
+            {name: [] for name in draw_variables} if selected_indices is not None else None
+        )
         rng = random.Random(seed_raw)
         try:
-            outcomes = sorted(
-                evaluate_numeric_expression(
-                    compiled,
-                    {name: sampler(rng) for name, sampler in variables.items()},
-                )
-                for _ in range(samples)
-            )
+            outcomes = []
+            for index in range(samples):
+                sampled_inputs = {name: sampler(rng) for name, sampler in variables.items()}
+                outcome = evaluate_numeric_expression(compiled, sampled_inputs)
+                outcomes.append(outcome)
+                if selected_index_set is not None and index in selected_index_set:
+                    assert retained_outcomes is not None
+                    assert retained_inputs is not None
+                    retained_outcomes.append(outcome)
+                    for name in draw_variables:
+                        retained_inputs[name].append(sampled_inputs[name])
         except (ArithmeticError, ValueError) as error:
             raise MonteCarloValidationError(str(error)) from error
+        outcomes.sort()
         mean = statistics.fmean(outcomes)
         standard_deviation = statistics.pstdev(outcomes, mu=mean)
-        return AnalysisResult(
+        data = {
+            "count": samples,
+            "mean": mean,
+            "standard_deviation": standard_deviation,
+            "minimum": outcomes[0],
+            "maximum": outcomes[-1],
+            "quantiles": {
+                self._format_quantile(probability): _quantile(outcomes, probability)
+                for probability in quantiles
+            },
+        }
+        if draw_limit is not None:
+            assert selected_indices is not None
+            assert retained_outcomes is not None
+            assert retained_inputs is not None
+            returned = len(selected_indices)
+            data["draws"] = {
+                "schema_version": 1,
+                "population": samples,
+                "returned": returned,
+                "selection": (
+                    "all" if returned == samples else "uniform_without_replacement_v1"
+                ),
+                "indices": selected_indices,
+                "outcome": retained_outcomes,
+                "inputs": retained_inputs,
+                "provenance": {
+                    "pearl_version": __version__,
+                    "python_version": platform.python_version(),
+                    "effective_request": {
+                        "variables": dict(variables_raw),
+                        "expression": expression_raw,
+                        "samples": samples,
+                        "seed": seed_raw,
+                        "quantiles": quantiles,
+                    },
+                    "input_order": list(variables),
+                },
+            }
+        result = AnalysisResult(
             engine=self.name,
             capabilities=self.capabilities,
-            data={
-                "count": samples,
-                "mean": mean,
-                "standard_deviation": standard_deviation,
-                "minimum": outcomes[0],
-                "maximum": outcomes[-1],
-                "quantiles": {
-                    self._format_quantile(probability): _quantile(outcomes, probability)
-                    for probability in quantiles
-                },
-            },
+            data=data,
             metadata={"samples": samples, "seed": seed_raw},
         )
+        if draw_limit is not None and json_line_size(result.to_dict()) > MAX_EXPORT_RESPONSE_BYTES:
+            raise MonteCarloValidationError(
+                "draw export exceeds the 16777216-byte JSON response limit; "
+                "reduce draw_limit or draw_variables"
+            )
+        return result
 
     def example_request(self) -> dict[str, object]:
         """Return a small request that exercises this engine's public input shape."""
@@ -144,6 +214,52 @@ class MonteCarloEngine:
             return compile_numeric_expression(expression if isinstance(expression, str) else "")
         except ValueError as error:
             raise MonteCarloValidationError(str(error)) from error
+
+    def _draw_export_controls(
+        self,
+        request: Mapping[str, object],
+        *,
+        variable_names: tuple[str, ...],
+    ) -> tuple[int | None, tuple[str, ...]]:
+        return_draws = request.get("return_draws", False)
+        if not isinstance(return_draws, bool):
+            raise MonteCarloValidationError("return_draws must be a boolean")
+        if not return_draws:
+            if "draw_limit" in request:
+                raise MonteCarloValidationError("draw_limit requires return_draws to be true")
+            if "draw_variables" in request:
+                raise MonteCarloValidationError("draw_variables requires return_draws to be true")
+            return None, ()
+
+        draw_limit = request.get("draw_limit", MAX_DRAW_LIMIT)
+        if isinstance(draw_limit, bool) or not isinstance(draw_limit, int):
+            raise MonteCarloValidationError("draw_limit must be an integer between 1 and 10000")
+        if not 1 <= draw_limit <= MAX_DRAW_LIMIT:
+            raise MonteCarloValidationError("draw_limit must be an integer between 1 and 10000")
+
+        draw_variables = request.get("draw_variables", [])
+        if not isinstance(draw_variables, list):
+            raise MonteCarloValidationError("draw_variables must be a list")
+        if len(draw_variables) > MAX_DRAW_VARIABLES:
+            raise MonteCarloValidationError("draw_variables must contain at most 16 names")
+        if any(not isinstance(name, str) for name in draw_variables):
+            raise MonteCarloValidationError("draw_variables must contain variable names")
+        if len(set(draw_variables)) != len(draw_variables):
+            raise MonteCarloValidationError("draw_variables must contain distinct names")
+        unknown = [name for name in draw_variables if name not in variable_names]
+        if unknown:
+            raise MonteCarloValidationError(
+                f"draw_variables contains unknown variable {unknown[0]!r}"
+            )
+        return draw_limit, tuple(draw_variables)
+
+    @staticmethod
+    def _selected_indices(*, samples: int, draw_limit: int, seed: int) -> list[int]:
+        returned = min(samples, draw_limit)
+        if returned == samples:
+            return list(range(samples))
+        selection_rng = random.Random(f"pearl-draw-selection-v1:{seed}")
+        return sorted(selection_rng.sample(range(samples), returned))
 
     def _variables(self, value: object) -> dict[str, Callable[[random.Random], float]]:
         mapping = _require_mapping(value, label="variables")

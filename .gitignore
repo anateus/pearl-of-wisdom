@@ -11,3 +11,7 @@ dist/
 
 # Source handoff. Keep locally, never publish or commit.
 /initial_base.md
+
+# Local visual QA evidence and downloaded references.
+/.impeccable/review/
+/.impeccable/quality-bar/*.webp
