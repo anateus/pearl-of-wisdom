@@ -29,6 +29,17 @@ The repository also contains a shared [Codex and Claude plugin](plugins/pearl-of
 
 The routing skill has a deliberately low activation floor. A quick bound or sensitivity check can help before an experiment becomes production behavior. It also has negative boundaries so deterministic edits and unsupported precision do not trigger a probabilistic workflow.
 
+## Use cases
+
+For a SaaS startup, Pearl can help investigate questions like these using models and assumptions you supply:
+
+- Financial: “Will cash last until the next fundraise?” “Can we afford two hires if sales slip?” “Is an annual-prepayment discount worth offering?” Compare scenarios with uncertain revenue, churn, and payment timing rather than relying on one optimistic budget.
+- Product and growth: “Would higher prices outweigh increased churn?” “Did onboarding changes cause better activation?” “Is one enterprise customer's custom feature worth delaying the roadmap?” Compare uncertain payoffs and make causal assumptions explicit rather than treating correlation as proof.
+- Engineering: “Is this intermittent failure caused by our deploy, overload, or a provider?” “Should we rewrite or migrate incrementally?” “Is another week of testing worth delaying launch?” Track competing explanations, weigh downside risk, and decide which diagnostic test or prototype is worth doing next.
+- Resources and delivery: “How many workers do we need before queues back up?” “Should we hire another support agent or improve self-service?” “How likely are we to finish a migration before the contractual deadline?” Use single-queue simulations and simple duration calculations to explore bottlenecks and deadline risks.
+
+The durable record lets you revisit a decision as evidence changes without losing the original assumptions. See [expanded SaaS use cases](USE_CASES.md) for more context on each scenario and the limits of the models.
+
 ## Setup
 
 Python 3.12 or newer and [uv](https://docs.astral.sh/uv/) are required.
@@ -112,7 +123,7 @@ uv run pearl-of-wisdom --db pearl.sqlite3 record-assumption INV_ID \
 uv run pearl-of-wisdom --db pearl.sqlite3 record-evidence INV_ID \
   --data '{"source":"experiment","conversion_delta":0.03}'
 uv run pearl-of-wisdom --db pearl.sqlite3 record-analysis INV_ID \
-  --engine monte_carlo --data '{"summary":"paste the analyzed result here"}'
+  --engine monte-carlo --data '{"summary":"paste the analyzed result here"}'
 uv run pearl-of-wisdom --db pearl.sqlite3 promote INV_ID
 uv run pearl-of-wisdom --db pearl.sqlite3 show INV_ID
 ```
