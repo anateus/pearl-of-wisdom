@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -73,7 +74,11 @@ def stage_bundle(root: Path, staging: Path, *, refresh_lock: bool = False) -> st
 def build_bundle(root: Path, out_dir: Path, *, refresh_lock: bool = False) -> Path:
     """Validate the lock and pack a clean, portable extension with pinned tooling."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="pearl-desktop-") as directory:
+    scratch = os.environ.get("JCODE_SCRATCH_DIR") or None
+    with (
+        tempfile.TemporaryDirectory(prefix="pearl-desktop-", dir=scratch) as directory,
+        tempfile.TemporaryDirectory(prefix=".pearl-output-", dir=out_dir) as output_directory,
+    ):
         staging = Path(directory)
         version = stage_bundle(root, staging, refresh_lock=refresh_lock)
         if refresh_lock:
@@ -89,8 +94,9 @@ def build_bundle(root: Path, out_dir: Path, *, refresh_lock: bool = False) -> Pa
             shutil.copyfile(staging / "uv.lock", root / "desktop/uv.lock")
         subprocess.run([*MCPB_COMMAND, "validate", str(staging / "manifest.json")], check=True)
         artifact = out_dir / f"pearl-of-wisdom-{version}.mcpb"
-        subprocess.run([*MCPB_COMMAND, "pack", str(staging), str(artifact)], check=True)
-        with zipfile.ZipFile(artifact) as archive:
+        pending = Path(output_directory) / artifact.name
+        subprocess.run([*MCPB_COMMAND, "pack", str(staging), str(pending)], check=True)
+        with zipfile.ZipFile(pending) as archive:
             expected = {
                 *TEMPLATE_FILES,
                 "uv.lock",
@@ -103,6 +109,9 @@ def build_bundle(root: Path, out_dir: Path, *, refresh_lock: bool = False) -> Pa
             names = {name for name in archive.namelist() if not name.endswith("/")}
             if not required <= names or not names <= expected:
                 raise ValueError(f"Unexpected bundle content: {sorted(names ^ required)}")
+        # Pending output lives on the same filesystem, so a failed build never
+        # replaces an existing usable artifact and successful publication is atomic.
+        os.replace(pending, artifact)
     return artifact
 
 

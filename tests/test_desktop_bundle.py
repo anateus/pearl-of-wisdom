@@ -181,3 +181,36 @@ def test_repository_source_is_rejected(synthetic_root: Path, tmp_path: Path) -> 
     )
     with pytest.raises(ValueError, match="bundled local wheel"):
         BUILDER.stage_bundle(synthetic_root, tmp_path)
+
+
+def test_failed_pack_preserves_previous_artifact_and_uses_scratch(
+    synthetic_root: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scratch = tmp_path / "configured scratch"
+    scratch.mkdir()
+    monkeypatch.setenv("JCODE_SCRATCH_DIR", str(scratch))
+    out = tmp_path / "output"
+    out.mkdir()
+    artifact = out / "pearl-of-wisdom-0.4.0.mcpb"
+    artifact.write_bytes(b"PREVIOUS_VALID_ARTIFACT_SENTINEL")
+    real_run = subprocess.run
+    failed = False
+
+    def fail_only_pack(command: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+        nonlocal failed
+        if command[:4] == [*BUILDER.MCPB_COMMAND, "pack"]:
+            assert Path(command[4]).parent == scratch
+            Path(command[5]).write_bytes(b"PARTIAL_FAILED_PACK")
+            failed = True
+            raise subprocess.CalledProcessError(1, command)
+        return real_run(command, **kwargs)
+
+    monkeypatch.setattr(BUILDER.subprocess, "run", fail_only_pack)
+    with pytest.raises(subprocess.CalledProcessError):
+        BUILDER.build_bundle(synthetic_root, out)
+    assert failed
+    assert artifact.read_bytes() == b"PREVIOUS_VALID_ARTIFACT_SENTINEL"
+    assert list(out.iterdir()) == [artifact]
+    assert not list(scratch.iterdir())
