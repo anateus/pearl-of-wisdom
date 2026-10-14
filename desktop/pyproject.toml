@@ -1,0 +1,12 @@
+[project]
+name = "pearl-desktop"
+version = "0.4.0"
+description = "Pearl of Wisdom MCP server for Desktop Chat."
+requires-python = ">=3.12"
+dependencies = ["mcp>=2,<3", "pearl-of-wisdom==0.4.0"]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pearl-of-wisdom = { path = "wheels/pearl_of_wisdom-0.4.0-py3-none-any.whl" }

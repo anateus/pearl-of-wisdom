@@ -1,0 +1,43 @@
+{
+  "manifest_version": "0.4",
+  "name": "pearl-of-wisdom",
+  "display_name": "Pearl of Wisdom",
+  "version": "0.4.0",
+  "description": "Analyze uncertainty and keep explicit investigations in a local SQLite database.",
+  "author": {"name": "Pearl of Wisdom contributors"},
+  "repository": {"type": "git", "url": "https://github.com/anateus/pearl-of-wisdom"},
+  "icon": "pearl.png",
+  "license": "MIT",
+  "server": {
+    "type": "uv",
+    "entry_point": "server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${__dirname}", "--locked", "server.py"],
+      "env": {"PEARL_DB": "${user_config.data_directory}/pearl.sqlite3"}
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {"python": ">=3.12"}
+  },
+  "user_config": {
+    "data_directory": {
+      "type": "directory",
+      "title": "Investigation data directory",
+      "description": "Choose a local directory outside the extension installation to retain investigations across upgrades and uninstall.",
+      "required": true,
+      "default": "${HOME}/.pearl-of-wisdom"
+    }
+  },
+  "tools": [
+    {"name": "pearl_status", "description": "Check Pearl and local database status."},
+    {"name": "pearl_analyze", "description": "Run a stateless probabilistic analysis."},
+    {"name": "pearl_example", "description": "Get an example analysis payload."},
+    {"name": "pearl_create_investigation", "description": "Create a local investigation."},
+    {"name": "pearl_list_investigations", "description": "List local investigations."},
+    {"name": "pearl_show_investigation", "description": "Show an investigation and its records."},
+    {"name": "pearl_record", "description": "Record evidence or analysis in an investigation."},
+    {"name": "pearl_promote_investigation", "description": "Promote an investigation conclusion."}
+  ]
+}

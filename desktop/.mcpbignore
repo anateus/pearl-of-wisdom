@@ -1,0 +1,10 @@
+.venv/
+server/lib/
+server/venv/
+__pycache__/
+*.pyc
+.env*
+*.sqlite3*
+*.log
+.git/
+README.md
