@@ -1,6 +1,6 @@
 # Desktop consumer compatibility verification
 
-Pearl's local integration is verified below, but a live Claude Desktop install and Chat session still need the user's approval and account. The end-user rollout isn't complete. No repository push, release, visibility change, Desktop preference change, conversation read, or customer-data access was performed.
+Pearl's local integration is verified below, but a live Claude Desktop install and Chat session still need the user's approval and account. The end-user rollout isn't complete. These runtime checks did not change Desktop preferences or access conversations, credentials, or customer data. The repository and marketplace have since been published publicly; that does not establish live Chat acceptance.
 
 ## Installed application checks
 
@@ -38,4 +38,4 @@ These overrides affect tests only. They don't change the shipped extension's com
 
 The user still needs to install the `.plugin` and `.mcpb`, approve their account's permissions, choose a fresh synthetic data directory, start a new Chat, and verify actual model tool routing and readback.
 
-Git-backed distribution also needs separately approved publication and private-repository access or organization sync. Direct file distribution avoids the Git access requirement. These checks establish local schema and runtime compatibility. They don't establish that a user's Desktop account can install the files and route model requests to them.
+The public marketplace can be added from its Git URL without a repository access grant. Organization policies may still restrict plugin or local-extension installation. These checks establish local schema and runtime compatibility. They don't establish that a user's Desktop account can install the files and route model requests to them.

@@ -4,21 +4,17 @@ Plugins require a paid Claude plan: Pro, Max, Team, or Enterprise. Install two p
 
 ## Install the skills
 
-The source repository is private. Git-backed installs need the marketplace and plugin changes pushed to GitHub first. For a direct repository import, the importing account also needs authentication that can read the repository. Local commits alone don't make an install available to coworkers. Don't change repository visibility or push a release as part of these setup steps.
-
-If your account can import the private repository, open **Customize > Plugins > Add > Add marketplace > Add from a repository** and enter this Git URL:
+The source repository and marketplace are public. No repository access grant is needed. Open **Customize > Plugins > Add > Add marketplace > Add from a repository** and enter this Git URL:
 
 ```text
 https://github.com/anateus/pearl-of-wisdom.git
 ```
 
-Install `pearl-of-wisdom` from that marketplace and enable it for Chat. If direct import can't authenticate to the private repository, a Team or Enterprise organization owner can use **Organization settings > Plugins & skills > Marketplaces > Add plugins > Sync from GitHub** with `anateus/pearl-of-wisdom`. The Claude GitHub App must be installed for that repository, and Cowork and Skills must be enabled for the organization. This is marketplace administration, not a requirement to use Cowork for Pearl analysis. See the [organization plugin guide](https://support.claude.com/en/articles/13837433-manage-plugins-for-your-organization).
+Install `pearl-of-wisdom` from that marketplace and enable it for Chat. Team or Enterprise organization owners can instead distribute it through **Organization settings > Plugins & skills > Marketplaces > Add plugins > Sync from GitHub** using `anateus/pearl-of-wisdom`. Organization sync has its own GitHub App and feature prerequisites; see the [organization plugin guide](https://support.claude.com/en/articles/13837433-manage-plugins-for-your-organization). Members then install from the organization catalog according to its access policy. This is marketplace administration, not a requirement to use Cowork for Pearl analysis.
 
-With organization-managed distribution, the owner's sync connection needs repository access. Members install the plugin from Claude's organization catalog according to the owner's access policy; they don't each need GitHub access to the private repository. This is separate from an individual authenticated repository import.
+### Install from files
 
-### Install from files without Git access
-
-A coworker can receive `pearl-of-wisdom-0.4.0.plugin` and `pearl-of-wisdom-0.4.0.mcpb` directly, without access to the GitHub repository. The `.plugin` file is a ZIP of the committed plugin tree. In **Customize > Plugins**, choose **Add** and the option to upload a custom plugin, then select the `.plugin` file. If the upload picker requires `.zip`, make a copy with a `.zip` suffix. Enable the uploaded plugin for Chat, then independently install the `.mcpb` through Settings > Extensions as described below. Uploading the plugin doesn't install the local MCP tools.
+A coworker can receive `pearl-of-wisdom-0.4.0.plugin` and `pearl-of-wisdom-0.4.0.mcpb` directly instead of adding the Git marketplace. The `.plugin` file is a ZIP of the committed plugin tree. In **Customize > Plugins**, choose **Add** and the option to upload a custom plugin, then select the `.plugin` file. If the upload picker requires `.zip`, make a copy with a `.zip` suffix. Enable the uploaded plugin for Chat, then independently install the `.mcpb` through Settings > Extensions as described below. Uploading the plugin doesn't install the local MCP tools.
 
 To prepare the plugin file from a checkout, first commit the reviewed plugin changes. From the repository root:
 
@@ -80,7 +76,7 @@ The packaged tools and the installed Desktop application's manifest schema and m
 
 Bump the plugin version when its content changes. Rebuild the `.plugin` from the committed plugin tree, and distribute the new file or push the approved changes before syncing a Git-backed marketplace. Changing same-version plugin content has a measured stale-cache risk in Claude Code. Desktop cache behavior hasn't been verified, so don't rely on a same-version replacement refreshing every client.
 
-Coordinate version changes across the core project, plugin manifest, bundled wheel, Desktop project, and extension manifest as their contracts require. Rebuild the matching wheel and bundle when those contracts change, and regenerate the Desktop lock when dependencies or its wheel change. Test the resulting files before distribution. Keep existing investigation data outside the extension during updates. Publishing, pushing, or changing repository visibility requires separate approval.
+Coordinate version changes across the core project, plugin manifest, bundled wheel, Desktop project, and extension manifest as their contracts require. Rebuild the matching wheel and bundle when those contracts change, and regenerate the Desktop lock when dependencies or its wheel change. Test the resulting files before distribution. Keep existing investigation data outside the extension during updates. Push reviewed marketplace changes before asking users to refresh a Git-backed install. Release publication is separate from installing or updating the local extension.
 
 ## Manual developer fallback
 

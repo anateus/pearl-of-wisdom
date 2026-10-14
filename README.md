@@ -42,13 +42,13 @@ The durable record lets you revisit a decision as evidence changes without losin
 
 ## Claude Desktop Chat
 
-For ordinary Desktop Chat, install the Pearl skills from this Git marketplace URL after the changes are pushed:
+For ordinary Desktop Chat, install the Pearl skills from this public Git marketplace URL:
 
 ```text
 https://github.com/anateus/pearl-of-wisdom.git
 ```
 
-The repository is private. Use an authenticated import or an organization-managed marketplace, or upload `pearl-of-wisdom-0.4.0.plugin` through **Customize > Plugins** without repository access. Keep the repository private unless its owner approves a visibility change.
+No repository access grant is needed. You can also upload `pearl-of-wisdom-0.4.0.plugin` through **Customize > Plugins**, or have an organization owner distribute it through a managed marketplace.
 
 Install and enable the `pearl-of-wisdom` plugin, then install the companion `pearl-of-wisdom-0.4.0.mcpb` through **Settings > Extensions**. The plugin supplies reasoning instructions; the extension runs Pearl's Python locally through uv and exposes MCP tools. Marketplace skills alone do not launch local tools in Chat. Claude Code and Cowork are not required.
 
