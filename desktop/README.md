@@ -1,10 +1,10 @@
 # Pearl in Claude Desktop Chat
 
-Install two pieces: the Pearl plugin supplies reasoning skills, and the Desktop extension supplies local MCP tools. This is the ordinary Chat workflow, not a requirement to run Claude Code or Cowork.
+Plugins require a paid Claude plan: Pro, Max, Team, or Enterprise. Install two pieces: the Pearl plugin supplies reasoning skills, and the Desktop extension supplies local MCP tools. This is the ordinary Chat workflow, not a requirement to run Claude Code or Cowork.
 
 ## Install the skills
 
-The source repository is private. Git URL installs need the marketplace and plugin changes pushed to GitHub first, plus authentication that can read the repository. Local commits alone don't make an install available to coworkers. Don't change repository visibility or push a release as part of these setup steps.
+The source repository is private. Git-backed installs need the marketplace and plugin changes pushed to GitHub first. For a direct repository import, the importing account also needs authentication that can read the repository. Local commits alone don't make an install available to coworkers. Don't change repository visibility or push a release as part of these setup steps.
 
 If your account can import the private repository, open **Customize > Plugins > Add > Add marketplace > Add from a repository** and enter this Git URL:
 
@@ -13,6 +13,8 @@ https://github.com/anateus/pearl-of-wisdom.git
 ```
 
 Install `pearl-of-wisdom` from that marketplace and enable it for Chat. If direct import can't authenticate to the private repository, a Team or Enterprise organization owner can use **Organization settings > Plugins & skills > Marketplaces > Add plugins > Sync from GitHub** with `anateus/pearl-of-wisdom`. The Claude GitHub App must be installed for that repository, and Cowork and Skills must be enabled for the organization. This is marketplace administration, not a requirement to use Cowork for Pearl analysis. See the [organization plugin guide](https://support.claude.com/en/articles/13837433-manage-plugins-for-your-organization).
+
+With organization-managed distribution, the owner's sync connection needs repository access. Members install the plugin from Claude's organization catalog according to the owner's access policy; they don't each need GitHub access to the private repository. This is separate from an individual authenticated repository import.
 
 ### Install from files without Git access
 
