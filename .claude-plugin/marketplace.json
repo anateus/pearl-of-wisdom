@@ -1,0 +1,13 @@
+{
+  "name": "pearl-of-wisdom",
+  "owner": {"name": "Pearl of Wisdom contributors"},
+  "metadata": {"description": "Shared skills for uncertainty reasoning and durable Pearl investigations."},
+  "plugins": [
+    {
+      "name": "pearl-of-wisdom",
+      "source": "./plugins/pearl-of-wisdom",
+      "description": "Portable uncertainty reasoning and investigation skills for MCP and installed CLI hosts.",
+      "author": {"name": "Pearl of Wisdom contributors"}
+    }
+  ]
+}

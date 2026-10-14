@@ -2,7 +2,9 @@
 
 Use this route for feedback, queues, resource contention, state transitions, or time-dependent behavior. Define state, events, transition and scheduling rules, initial conditions, horizon, warm-up, and metrics before running scenarios. Validate invariants and edge cases, compare against any observed baseline, and vary structural assumptions. A simulation can expose mechanisms and operational ranges; it cannot validate its own premises.
 
-Pearl implements one finite FIFO worker queue through `analyze --engine system-simulation`. Run the [CLI compatibility check](../../../scripts/check_cli.py) with `python3`, then use its returned `executable`. Discover a runnable request with:
+Pearl implements one finite FIFO worker queue. In MCP hosts, check `pearl_status()` compatibility first, discover inputs with `pearl_example(engine='system-simulation')`, and run `pearl_analyze(engine='system-simulation', data=REQUEST)` with a JSON object. Do not run the CLI examples in Chat.
+
+Only in shell-capable hosts without MCP tools, run the [CLI compatibility check](../../../scripts/check_cli.py) with `python3`, then use its returned `executable`. Discover a runnable request with:
 
 ```bash
 pearl-of-wisdom analyze --engine system-simulation --example

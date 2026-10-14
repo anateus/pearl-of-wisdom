@@ -1,5 +1,7 @@
 # CLI workflow
 
+This reference applies only to shell-capable Code or Codex hosts without Pearl MCP tools. It is not a Chat workflow. MCP hosts use [mcp-workflow.md](mcp-workflow.md); Chat without tools needs the companion `.mcpb` installed through Desktop Extensions.
+
 Run the compatibility check linked from [the skill](../SKILL.md), then use the returned executable directly. The examples below use `pearl-of-wisdom` for readability; use its checked absolute path when invoking it. Install or update the bundled wheel once when the check requests it.
 
 The command is intentionally the source of truth for its flags. Start with:

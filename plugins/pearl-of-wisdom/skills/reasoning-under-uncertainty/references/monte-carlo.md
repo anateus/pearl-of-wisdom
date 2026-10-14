@@ -4,6 +4,8 @@ Use sampling only when a distribution for each uncertain input is defensible. Na
 
 A simulation is a calculation under assumptions. It does not turn an assumption, generated sample, or historical correlation into evidence about the world.
 
+In MCP hosts, check `pearl_status()` compatibility, discover inputs with `pearl_example(engine='monte-carlo')`, and calculate with `pearl_analyze(engine='monte-carlo', data=REQUEST)` using a JSON object. The visualization commands below apply only to shell-capable hosts with the optional companion already available. Chat must not run these commands or install the companion; report the numerical result without a plot when no suitable tool is exposed.
+
 When someone will use a plot and `pearl-of-wisdom-viz` is already available, request `return_draws: true` for an empirical cumulative distribution. Add `draw_variables` only for inputs that need row-level inspection. Forest comparisons use the full-run quantiles already present in each result and do not need exported draws. The reasoning skill never plots automatically.
 
 For sharing a model with a general audience, prefer companion 0.2.0's `explain --context FILE --out FILE.html` over an unexplained raw plot. Supply the question, units, plain-language input meanings, evidence statuses, limitations, and local result paths with their exact SHA-256 hashes. The context cannot supply the numerical answer. Use raw `dist` and `forest` plots for statistical inspection.

@@ -2,6 +2,8 @@
 
 Choose the first route whose inputs and output match the question. Escalate only when the simpler route cannot distinguish the decisions.
 
+In MCP hosts, call `pearl_status()` for compatibility, then `pearl_example(engine)` for the request and result and `pearl_analyze(engine, data)` to calculate. CLI examples in method references are for shell-capable hosts only: `analyze --engine ENGINE --example` maps to `pearl_example(engine=ENGINE)`, and `analyze --engine ENGINE --data REQUEST` maps to `pearl_analyze(engine=ENGINE, data=REQUEST)` with a JSON object. Chat does not run shell examples or the CLI compatibility script. Follow the loaded skill's host guidance when tools or reference content are unavailable.
+
 | Route | Use when | Minimum output |
 | --- | --- | --- |
 | Exact calculation | Inputs and rules are known and finite or algebraically defined | Formula, units, result, and checks |
