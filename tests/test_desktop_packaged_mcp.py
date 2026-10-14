@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sqlite3
 import subprocess
 import sys
@@ -37,9 +38,26 @@ def test_packaged_uv_server_calculates_and_retains_records(tmp_path: Path) -> No
     environment = {
         key: value.replace("${user_config.data_directory}", str(data_directory))
         for key, value in config["env"].items()
-    } | {"UV_OFFLINE": "1", "UV_PYTHON_DOWNLOADS": "never"}
+    } | {"UV_OFFLINE": "1", "UV_PYTHON_DOWNLOADS": "never", "UV_PYTHON": sys.executable}
+    runtime = os.environ.get("PEARL_DESKTOP_UV_EXECUTABLE", config["command"])
+    if cache := os.environ.get("PEARL_DESKTOP_UV_CACHE_DIR"):
+        environment["UV_CACHE_DIR"] = cache
+    lock_before = (extension / "uv.lock").read_bytes()
+    installer_environment = os.environ | environment
+    installer_environment.pop("VIRTUAL_ENV", None)
+    installer_environment.pop("UV_PROJECT_ENVIRONMENT", None)
+    # Desktop's uv installer syncs without --locked before launching the manifest command.
+    subprocess.run(
+        [runtime, "sync", "--quiet"],
+        cwd=extension,
+        env=installer_environment,
+        check=True,
+        timeout=90,
+    )
+    assert (extension / "uv.lock").read_bytes() == lock_before
+    assert not data_directory.exists()
     parameters = StdioServerParameters(
-        command=config["command"],
+        command=runtime,
         args=[argument.replace("${__dirname}", str(extension)) for argument in config["args"]],
         env=environment,
         cwd=tmp_path,
@@ -109,6 +127,7 @@ def test_packaged_uv_server_calculates_and_retains_records(tmp_path: Path) -> No
         return identifier
 
     identifier = asyncio.run(exercise())
+    assert (extension / "uv.lock").read_bytes() == lock_before
     assert database.is_file()
     positive = extension / "known-positive.sqlite3"
     positive.touch()

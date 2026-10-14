@@ -72,6 +72,10 @@ uv run pytest tests/test_desktop_bundle.py
 
 Don't run the Desktop template directly from the source directory: its wheel path exists in staging and in the extension, not in the repository's `desktop/` directory.
 
+## Verification boundary
+
+The packaged tools and the installed Desktop application's manifest schema and managed uv `0.9.7` have been checked on macOS. See [consumer verification](../docs/desktop-consumer-verification.md) for the observed version, exact test scope, and reproducible runtime check. A live Desktop install, account permissions, and Chat model routing remain unverified.
+
 ## Updates and release policy
 
 Bump the plugin version when its content changes. Rebuild the `.plugin` from the committed plugin tree, and distribute the new file or push the approved changes before syncing a Git-backed marketplace. Changing same-version plugin content has a measured stale-cache risk in Claude Code. Desktop cache behavior hasn't been verified, so don't rely on a same-version replacement refreshing every client.
