@@ -28,11 +28,30 @@ Engine = Literal[
 RecordKind = Literal["context", "assumption", "evidence", "analysis"]
 
 
-class _ReadOnlyStore(InvestigationStore):
-    """Reuse core record decoding without its schema-initializing constructor."""
+class _ExistingStore(InvestigationStore):
+    """Use existing Pearl storage without the core's schema-initializing constructor."""
 
     def __init__(self, database: Path) -> None:
         self.database = str(database)
+
+    @contextmanager
+    def _connection(self) -> Generator[sqlite3.Connection, None, None]:
+        uri = Path(self.database).as_uri() + "?mode=rw"
+        connection = sqlite3.connect(uri, uri=True)
+        try:
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA foreign_keys = ON")
+            yield connection
+            connection.commit()
+        except BaseException:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+
+
+class _ReadOnlyStore(_ExistingStore):
+    """Decode existing records using a read-only snapshot, without initializing storage."""
 
     @contextmanager
     def _connection(self) -> Generator[sqlite3.Connection, None, None]:
@@ -110,11 +129,12 @@ def create_server(database: str | Path) -> MCPServer:
         guard()
         if create:
             path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            return InvestigationStore(path)
         elif not path.exists():
             raise InvestigationNotFoundError(
                 "No investigation database exists at the configured path"
             )
-        return _ReadOnlyStore(path) if read_only else InvestigationStore(path)
+        return _ReadOnlyStore(path) if read_only else _ExistingStore(path)
 
     @server.tool(annotations=read_only)
     def pearl_status() -> dict[str, Any]:

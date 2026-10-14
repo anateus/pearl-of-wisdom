@@ -140,3 +140,32 @@ def test_packaged_uv_server_calculates_and_retains_records(tmp_path: Path) -> No
         ]
         rows = connection.execute("SELECT kind, payload FROM investigation_records").fetchall()
         assert [(kind, json.loads(payload)) for kind, payload in rows] == [("context", context)]
+
+    foreign = tmp_path / "unrelated.sqlite3"
+    with sqlite3.connect(foreign) as connection:
+        connection.execute("CREATE TABLE unrelated (value INTEGER)")
+        connection.execute("INSERT INTO unrelated VALUES (42)")
+    before = foreign.read_bytes()
+    foreign_parameters = StdioServerParameters(
+        command=runtime,
+        args=parameters.args,
+        env=environment | {"PEARL_DB": str(foreign)},
+        cwd=tmp_path,
+    )
+
+    async def failed_writes() -> None:
+        async with Client(foreign_parameters, mode="legacy", read_timeout_seconds=30) as client:
+            for operation in ("pearl_record", "pearl_promote_investigation"):
+                arguments = {"investigation_id": "synthetic-not-created"}
+                if operation == "pearl_record":
+                    arguments |= {"kind": "context", "data": {"synthetic": True}}
+                failed = await client.call_tool(operation, arguments)
+                assert failed.is_error
+                assert foreign.read_bytes() == before
+
+    asyncio.run(failed_writes())
+    with sqlite3.connect(foreign) as connection:
+        assert connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall() == [("unrelated",)]
+        assert connection.execute("SELECT value FROM unrelated").fetchall() == [(42,)]

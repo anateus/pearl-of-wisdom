@@ -41,7 +41,7 @@ Available tools are `pearl_status`, `pearl_analyze`, `pearl_example`, `pearl_cre
 
 ## Data and privacy
 
-Pearl performs computations on your computer and stores investigations in `pearl.sqlite3` under the directory you choose. Keeping that directory outside the extension means an extension upgrade or uninstall doesn't remove your investigations. Back it up separately. Uninstalling the extension doesn't delete that database, and choosing a new directory opens a different database rather than moving existing records.
+Pearl performs computations on your computer and stores investigations in `pearl.sqlite3` under the directory you choose. Only an explicit `pearl_create_investigation` initializes storage. Record and promote open existing storage without creating files or schemas, including when those calls fail. Keeping that directory outside the extension means an extension upgrade or uninstall doesn't remove your investigations. Back it up separately. Uninstalling the extension doesn't delete that database, and choosing a new directory opens a different database rather than moving existing records.
 
 Local storage is not a fully offline model workflow. Tool outputs, including any investigation content Claude requests, enter the conversation and reach the Claude model account you're using. Only use data that account is authorized to process. Dependencies may be downloaded at first start, but Pearl has no remote investigation storage service.
 
