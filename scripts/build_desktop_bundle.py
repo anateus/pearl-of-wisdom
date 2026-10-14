@@ -21,7 +21,7 @@ TEMPLATE_FILES = ("manifest.json", "pyproject.toml", ".mcpbignore", "server.py")
 
 
 def stage_bundle(root: Path, staging: Path, *, refresh_lock: bool = False) -> str:
-    """Copy only public runtime inputs. Never copy a repository tree or environment."""
+    """Copy only runtime inputs. Never copy a repository tree or environment."""
     manifest = json.loads((root / "desktop/manifest.json").read_text())
     version = manifest["version"]
     project = tomllib.loads((root / "pyproject.toml").read_text())["project"]

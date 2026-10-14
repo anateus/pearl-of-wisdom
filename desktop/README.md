@@ -4,13 +4,28 @@ Install two pieces: the Pearl plugin supplies reasoning skills, and the Desktop 
 
 ## Install the skills
 
-Open Claude's plugin browser, choose the option to add a marketplace from a repository, and enter this Git URL:
+The source repository is private. Git URL installs need the marketplace and plugin changes pushed to GitHub first, plus authentication that can read the repository. Local commits alone don't make an install available to coworkers. Don't change repository visibility or push a release as part of these setup steps.
+
+If your account can import the private repository, open **Customize > Plugins > Add > Add marketplace > Add from a repository** and enter this Git URL:
 
 ```text
 https://github.com/anateus/pearl-of-wisdom.git
 ```
 
-Install the `pearl-of-wisdom` plugin from that marketplace and enable it for Chat. The repository must contain the published marketplace and plugin changes before this works for another user. If your organization restricts plugins or local extensions, ask its administrator to approve them.
+Install `pearl-of-wisdom` from that marketplace and enable it for Chat. If direct import can't authenticate to the private repository, a Team or Enterprise organization owner can use **Organization settings > Plugins & skills > Marketplaces > Add plugins > Sync from GitHub** with `anateus/pearl-of-wisdom`. The Claude GitHub App must be installed for that repository, and Cowork and Skills must be enabled for the organization. This is marketplace administration, not a requirement to use Cowork for Pearl analysis. See the [organization plugin guide](https://support.claude.com/en/articles/13837433-manage-plugins-for-your-organization).
+
+### Install from files without Git access
+
+A coworker can receive `pearl-of-wisdom-0.4.0.plugin` and `pearl-of-wisdom-0.4.0.mcpb` directly, without access to the GitHub repository. The `.plugin` file is a ZIP of the committed plugin tree. In **Customize > Plugins**, choose **Add** and the option to upload a custom plugin, then select the `.plugin` file. If the upload picker requires `.zip`, make a copy with a `.zip` suffix. Enable the uploaded plugin for Chat, then independently install the `.mcpb` through Settings > Extensions as described below. Uploading the plugin doesn't install the local MCP tools.
+
+To prepare the plugin file from a checkout, first commit the reviewed plugin changes. From the repository root:
+
+```bash
+mkdir -p dist
+git archive --format=zip HEAD:plugins/pearl-of-wisdom --output=dist/pearl-of-wisdom-0.4.0.plugin
+```
+
+This includes only committed files under `plugins/pearl-of-wisdom`, not the working tree or the root marketplace. If your organization restricts plugins or local extensions, ask its administrator to approve them. File distribution doesn't require a remote push or a GitHub release.
 
 ## Install the local tools
 
@@ -54,6 +69,12 @@ uv run pytest tests/test_desktop_bundle.py
 ```
 
 Don't run the Desktop template directly from the source directory: its wheel path exists in staging and in the extension, not in the repository's `desktop/` directory.
+
+## Updates and release policy
+
+Bump the plugin version when its content changes. Rebuild the `.plugin` from the committed plugin tree, and distribute the new file or push the approved changes before syncing a Git-backed marketplace. Changing same-version plugin content has a measured stale-cache risk in Claude Code. Desktop cache behavior hasn't been verified, so don't rely on a same-version replacement refreshing every client.
+
+Coordinate version changes across the core project, plugin manifest, bundled wheel, Desktop project, and extension manifest as their contracts require. Rebuild the matching wheel and bundle when those contracts change, and regenerate the Desktop lock when dependencies or its wheel change. Test the resulting files before distribution. Keep existing investigation data outside the extension during updates. Publishing, pushing, or changing repository visibility requires separate approval.
 
 ## Manual developer fallback
 
