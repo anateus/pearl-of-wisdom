@@ -40,9 +40,23 @@ For a SaaS startup, Pearl can help investigate questions like these using models
 
 The durable record lets you revisit a decision as evidence changes without losing the original assumptions. See [expanded SaaS use cases](USE_CASES.md) for more context on each scenario and the limits of the models.
 
-## Setup
+## Claude Desktop Chat
 
-Python 3.12 or newer and [uv](https://docs.astral.sh/uv/) are required.
+For ordinary Desktop Chat, install the Pearl skills from this Git marketplace URL after the changes are pushed:
+
+```text
+https://github.com/anateus/pearl-of-wisdom.git
+```
+
+The repository is private. Use an authenticated import or an organization-managed marketplace, or upload `pearl-of-wisdom-0.4.0.plugin` through **Customize > Plugins** without repository access. Keep the repository private unless its owner approves a visibility change.
+
+Install and enable the `pearl-of-wisdom` plugin, then install the companion `pearl-of-wisdom-0.4.0.mcpb` through **Settings > Extensions**. The plugin supplies reasoning instructions; the extension runs Pearl's Python locally through uv and exposes MCP tools. Marketplace skills alone do not launch local tools in Chat. Claude Code and Cowork are not required.
+
+See the [Desktop installation guide](desktop/README.md) for permissions, first-start downloads, persistent SQLite storage, a manual Developer fallback, and bundle builds. Model responses still use your Claude account: local computation does not keep tool results out of the conversation.
+
+## Python CLI setup
+
+Python 3.12 or newer and [uv](https://docs.astral.sh/uv/) are required for the standalone CLI.
 
 ```bash
 uv sync --locked
@@ -225,7 +239,13 @@ This queue completes three jobs with response times 3, 5, and 7 time units. The 
 
 [plugins/pearl-of-wisdom](plugins/pearl-of-wisdom) is one self-contained plugin tree. Both manifests point to the same skills, and both hosts discover the shared hook file. This follows the useful part of Hindsight's unified approach: shared behavior with thin host-specific packaging.
 
-Claude can load a checkout directly for a session:
+Claude Code can install the plugin from the same marketplace:
+
+```text
+/plugin install pearl-of-wisdom --marketplace anateus/pearl-of-wisdom
+```
+
+For a checkout-only session, Claude Code can load it directly:
 
 ```bash
 claude --plugin-dir "$PWD/plugins/pearl-of-wisdom"
@@ -246,7 +266,7 @@ python3 ./plugins/pearl-of-wisdom/scripts/check_cli.py
 
 The [compatibility check](plugins/pearl-of-wisdom/scripts/check_cli.py) accepts CLI versions `>=0.4.0,<0.5.0` and returns the installed executable's absolute path. Missing, older, newer-minor, and unrecognized versions stop the workflow with an exact install command for this plugin's wheel. The check reads the required version from the plugin manifest; later stable patches in the same minor release are compatible.
 
-Both host skills run the installed executable directly after this check. Normal use needs Python and access to the investigation database, without writable uv caches or tool directories. `uv` is needed for installation and updates. If the host requires approval to write its tool directories, approve that install command or run it in a terminal, then rerun the check. Installation does not change later commands' sandbox permissions. Python 3 must be available as `python3` for the plugin check and hook.
+Without MCP tools, Code and Codex skills run the installed executable directly after this check. Normal CLI use needs Python and access to the investigation database, without writable uv caches or tool directories. `uv` is needed for installation and updates. If the host requires approval to write its tool directories, approve that install command or run it in a terminal, then rerun the check. Installation does not change later commands' sandbox permissions. Python 3 must be available as `python3` for the plugin check and hook.
 
 ## Host end-to-end tests
 
@@ -270,6 +290,8 @@ There is no daemon in this release. Direct CLI calls avoid another lifecycle and
 Dependent Monte Carlo inputs, schema migrations, and automatic engine-result persistence remain deferred. Record results from any engine with `record-analysis` when they need to be kept. Causal discovery, general causal estimation from datasets, sequential experiment optimization, and general networks of queues are also outside the current engine scope.
 
 ## Development
+
+The full test suite builds and launches the actual Desktop extension. Node.js/npm are required for the pinned MCPB validator and packer, in addition to Python and uv. These checks use synthetic inputs, not a Claude Desktop model session.
 
 ```bash
 uv run pytest -q
