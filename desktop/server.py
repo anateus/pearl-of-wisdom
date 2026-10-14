@@ -6,7 +6,8 @@ import argparse
 import os
 import re
 import sqlite3
-from collections.abc import Callable
+from collections.abc import Callable, Generator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Literal
 
@@ -25,6 +26,24 @@ Engine = Literal[
     "monte-carlo", "discrete-bayes", "decision-analysis", "causal", "system-simulation"
 ]
 RecordKind = Literal["context", "assumption", "evidence", "analysis"]
+
+
+class _ReadOnlyStore(InvestigationStore):
+    """Reuse core record decoding without its schema-initializing constructor."""
+
+    def __init__(self, database: Path) -> None:
+        self.database = str(database)
+
+    @contextmanager
+    def _connection(self) -> Generator[sqlite3.Connection, None, None]:
+        uri = Path(self.database).as_uri() + "?mode=ro"
+        connection = sqlite3.connect(uri, uri=True)
+        connection.row_factory = sqlite3.Row
+        try:
+            connection.execute("BEGIN")
+            yield connection
+        finally:
+            connection.close()
 
 
 def _compatible_core() -> bool:
@@ -87,7 +106,7 @@ def create_server(database: str | Path) -> MCPServer:
                 )
             )
 
-    def store(*, create: bool = False) -> InvestigationStore:
+    def store(*, create: bool = False, read_only: bool = False) -> InvestigationStore:
         guard()
         if create:
             path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -95,7 +114,7 @@ def create_server(database: str | Path) -> MCPServer:
             raise InvestigationNotFoundError(
                 "No investigation database exists at the configured path"
             )
-        return InvestigationStore(path)
+        return _ReadOnlyStore(path) if read_only else InvestigationStore(path)
 
     @server.tool(annotations=read_only)
     def pearl_status() -> dict[str, Any]:
@@ -153,14 +172,18 @@ def create_server(database: str | Path) -> MCPServer:
             guard()
             if not path.exists():
                 return {"investigations": []}
-            return {"investigations": [item.to_dict() for item in store().list_investigations()]}
+            return {
+                "investigations": [
+                    item.to_dict() for item in store(read_only=True).list_investigations()
+                ]
+            }
 
         return _invoke(run)
 
     @server.tool(annotations=read_only)
     def pearl_show_investigation(investigation_id: str) -> dict[str, Any]:
         """Read one investigation and verify its saved records and lifecycle state."""
-        return _invoke(lambda: store().get_investigation(investigation_id).to_dict())
+        return _invoke(lambda: store(read_only=True).get_investigation(investigation_id).to_dict())
 
     @server.tool(annotations=append_only)
     def pearl_record(

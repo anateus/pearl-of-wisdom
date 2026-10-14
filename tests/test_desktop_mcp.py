@@ -112,6 +112,31 @@ def test_storage_error_recovers_after_directory_is_fixed(tmp_path: Path) -> None
         assert connection.execute("SELECT count(*) FROM investigations").fetchone() == (1,)
 
 
+def test_read_tools_do_not_initialize_an_existing_non_pearl_database(tmp_path: Path) -> None:
+    database = tmp_path / "unrelated.sqlite3"
+    with sqlite3.connect(database) as connection:
+        connection.execute("CREATE TABLE unrelated (value INTEGER)")
+        connection.execute("INSERT INTO unrelated VALUES (42)")
+    before = database.read_bytes()
+
+    async def exercise() -> None:
+        async with Client(_server(database), mode="legacy", read_timeout_seconds=10) as client:
+            listed = await client.call_tool("pearl_list_investigations", {})
+            assert listed.is_error
+            assert "storage_error" in listed.content[0].text
+            shown = await client.call_tool("pearl_show_investigation", {"investigation_id": "fake"})
+            assert shown.is_error
+            assert "storage_error" in shown.content[0].text
+
+    asyncio.run(exercise())
+    assert database.read_bytes() == before
+    with sqlite3.connect(database) as connection:
+        assert connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall() == [("unrelated",)]
+        assert connection.execute("SELECT value FROM unrelated").fetchall() == [(42,)]
+
+
 def test_stateless_exact_calculation(tmp_path: Path) -> None:
     database = tmp_path / "analysis-only" / "investigations.sqlite3"
 
